@@ -1,3 +1,8 @@
+Tue Mar  3 12:45:42 1998  Ulrich Pfeifer  <upf@de.uu.net>
+
+	* mkpackages (wanted): $VERSION is found now even if line crosses 
+	  block boundary.
+
 Tue Jan 13 11:58:31 1998  Ulrich Pfeifer  <pfeifer@wait.de>
 
 	* mkpackages: Now removes 'id/' from path

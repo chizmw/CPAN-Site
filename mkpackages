@@ -5,9 +5,9 @@
 # Author          : Ulrich Pfeifer
 # Created On      : Wed Jan  7 15:04:13 1998
 # Last Modified By: Ulrich Pfeifer
-# Last Modified On: Thu Jan  8 13:08:11 1998
+# Last Modified On: Tue Mar  3 13:06:48 1998
 # Language        : CPerl
-# Update Count    : 8
+# Update Count    : 16
 # Status          : Unknown, Use with caution!
 # 
 # (C) Copyright 1998, Ulrich Pfeifer, all rights reserved.
@@ -70,31 +70,33 @@ sub wanted {
     my $fh = new IO::File "gzip -cd $File::Find::name|"
       or die "gzip $File::Find::name: $!\n";
     my ($file, $package, $version);
-    my $buf = '';
-
-
-    while ($fh->sysread($buf, 512)) {
-      if ($buf =~ /^(\S*?)\0/) {
-        register($file, $package, $version, $File::Find::name)
-          if $package;
+    my $in_buf  = '';
+    my $out_buf = '';
+        
+    while ($fh->sysread($in_buf, 512)) {
+      if ($in_buf =~ /^(\S*?)\0/) {
         $file = $1;
         warn "file=$file\n" if $DEBUG and length $file;
         undef $package;
         undef $version;
       }
 
-      for (split /\n/, $buf) {
-        if (/^package \s* ((\w+::)*\w+) \s* ;/x) {
+      $out_buf .= $in_buf;
+      while ($out_buf =~ s/^([^\n]*)\n//) {
+        local $_ = $1;
+        warn $_."\n" if /version/i;
+        if (/^\s* package \s* ((\w+::)*\w+) \s* ;/x) {
           $package = $1;
           warn "package=$package\n" if $DEBUG;
         } elsif (/^ \s* (?: \$ (\w+::)* VERSION \s* = \s* )+ (.*) $/x) {
+          warn 'package foo; ' . $2 . "\n" if $DEBUG;
           $version = eval 'package foo; ' . $2;
           warn "version=$version\n" if $DEBUG;
+          register($file, $package, $version, $File::Find::name)
+            if $file and $package;
         }
       }
     }
-    register($file, $package, $version, $File::Find::name)
-      if $package;
   }
 }
 print "VERSION=$VERSION\n";

@@ -19,10 +19,10 @@ use vars qw($VERSION @ISA);
 @ISA = qw(CPAN);
 
 # $Format: "$VERSION = sprintf '%5.3f', ($ProjectMajorVersion$ * 100 + ($ProjectMinorVersion$-1))/1000;"$
-$VERSION = sprintf '%5.3f', (0 * 100 + (9-1))/1000;
+$VERSION = sprintf '%5.3f', (0 * 100 + (10-1))/1000;
 
 # This line is edited by Makefile.PL. Don't change formatting etc.
-unshift @{$CPAN::Config->{urllist}}, q[file:/tmp/CPAN/]
+unshift @{$CPAN::Config->{urllist}}, q[make dist]
   if $CPAN::Config->{urllist};
 
 my $reload_orig;

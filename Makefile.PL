@@ -1,6 +1,6 @@
 #                              -*- Mode: Perl -*- 
 # $Basename: Makefile.PL $
-# $Revision: 1.7 $
+# $Revision: 1.8 $
 # Author          : Ulrich Pfeifer
 # Created On      : Wed Jan  7 14:34:24 1998
 # Last Modified By: Ulrich Pfeifer
@@ -23,7 +23,7 @@ WriteMakefile
   (
    'NAME'	=> 'CPAN::Site',
    # $Format: "   'VERSION'    => sprintf('%5.3f', ($ProjectMajorVersion$ * 100 + ( $ProjectMinorVersion$-1))/1000),"$ 
-   'VERSION'    => sprintf('%5.3f', (0 * 100 + ( 9-1))/1000),
+   'VERSION'    => sprintf('%5.3f', (0 * 100 + ( 10-1))/1000),
    'dist'       => {
                     COMPRESS => 'gzip -9f',
                     PREOP    => 'pod2text Site.pm > README',
