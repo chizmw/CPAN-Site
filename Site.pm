@@ -1,6 +1,6 @@
 #                              -*- Mode: Perl -*- 
 # $Basename: Site.pm $
-# $Revision: 1.9 $
+# $Revision: 1.10 $
 # Author          : Ulrich Pfeifer
 # Created On      : Wed Jan  7 11:42:46 1998
 # Last Modified By: Ulrich Pfeifer
@@ -19,7 +19,7 @@ use vars qw($VERSION @ISA);
 @ISA = qw(CPAN);
 
 # $Format: "$VERSION = sprintf '%5.3f', ($ProjectMajorVersion$ * 100 + ($ProjectMinorVersion$-1))/1000;"$
-$VERSION = sprintf '%5.3f', (0 * 100 + (10-1))/1000;
+$VERSION = sprintf '%5.3f', (0 * 100 + (12-1))/1000;
 
 # This line is edited by Makefile.PL. Don't change formatting etc.
 unshift @{$CPAN::Config->{urllist}}, q[make dist]

@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 #                              -*- Mode: Perl -*- 
 # $Basename: mkpackages $
-# $Revision: 1.5 $
+# $Revision: 1.8 $
 # Author          : Ulrich Pfeifer
 # Created On      : Wed Jan  7 15:04:13 1998
 # Last Modified By: Ulrich Pfeifer
-# Last Modified On: Tue Mar  3 13:06:48 1998
+# Last Modified On: Mon May  4 19:36:34 1998
 # Language        : CPerl
-# Update Count    : 16
+# Update Count    : 19
 # Status          : Unknown, Use with caution!
 # 
 # (C) Copyright 1998, Ulrich Pfeifer, all rights reserved.
@@ -19,7 +19,7 @@ use IO::File;
 use File::Find;
 
 # $Format: "my $VERSION = sprintf '%5.3f', ($ProjectMajorVersion$ * 100 + ($ProjectMinorVersion$-1))/1000;"$
-my $VERSION = sprintf '%5.3f', (0 * 100 + (9-1))/1000;
+my $VERSION = sprintf '%5.3f', (0 * 100 + (12-1))/1000;
 
 my $CPAN = shift;
 
@@ -72,19 +72,20 @@ sub wanted {
     my ($file, $package, $version);
     my $in_buf  = '';
     my $out_buf = '';
-        
+
+  BLOCK:
     while ($fh->sysread($in_buf, 512)) {
       if ($in_buf =~ /^(\S*?)\0/) {
         $file = $1;
         warn "file=$file\n" if $DEBUG and length $file;
         undef $package;
         undef $version;
+        next BLOCK;
       }
 
       $out_buf .= $in_buf;
       while ($out_buf =~ s/^([^\n]*)\n//) {
         local $_ = $1;
-        warn $_."\n" if /version/i;
         if (/^\s* package \s* ((\w+::)*\w+) \s* ;/x) {
           $package = $1;
           warn "package=$package\n" if $DEBUG;
@@ -99,7 +100,7 @@ sub wanted {
     }
   }
 }
-print "VERSION=$VERSION\n";
+print STDERR "$0 VERSION $VERSION\n";
 my $lines = keys %VERSION;
 my $date  = gmtime;
 $fh->print (<<EOH)

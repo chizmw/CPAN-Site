@@ -1,3 +1,8 @@
+Tue May  5 12:40:27 1998  Ulrich Pfeifer  <upf@de.uu.net>
+
+	* mkpackages (wanted): 'package' now found even if in the first
+ 	line of a file.
+
 Tue Mar  3 12:45:42 1998  Ulrich Pfeifer  <upf@de.uu.net>
 
 	* mkpackages (wanted): $VERSION is found now even if line crosses 
