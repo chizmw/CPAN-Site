@@ -1,3 +1,7 @@
+Wed May  6 13:26:13 1998  Ulrich Pfeifer  <upf@de.uu.net>
+
+	* mkpackages: Rudimentary CHECKSUMS support
+
 Tue May  5 12:40:27 1998  Ulrich Pfeifer  <upf@de.uu.net>
 
 	* mkpackages (wanted): 'package' now found even if in the first

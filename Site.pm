@@ -4,9 +4,9 @@
 # Author          : Ulrich Pfeifer
 # Created On      : Wed Jan  7 11:42:46 1998
 # Last Modified By: Ulrich Pfeifer
-# Last Modified On: Tue Jan 13 11:58:10 1998
+# Last Modified On: Wed May  6 13:30:41 1998
 # Language        : CPerl
-# Update Count    : 12
+# Update Count    : 13
 # Status          : Unknown, Use with caution!
 # 
 # (C) Copyright 1998, Ulrich Pfeifer, all rights reserved.
@@ -19,10 +19,10 @@ use vars qw($VERSION @ISA);
 @ISA = qw(CPAN);
 
 # $Format: "$VERSION = sprintf '%5.3f', ($ProjectMajorVersion$ * 100 + ($ProjectMinorVersion$-1))/1000;"$
-$VERSION = sprintf '%5.3f', (0 * 100 + (12-1))/1000;
+$VERSION = sprintf '%5.3f', (0 * 100 + (14-1))/1000;
 
 # This line is edited by Makefile.PL. Don't change formatting etc.
-unshift @{$CPAN::Config->{urllist}}, q[make dist]
+unshift @{$CPAN::Config->{urllist}}, q[http://www.forbar.com/CPAN/]
   if $CPAN::Config->{urllist};
 
 my $reload_orig;

@@ -1,13 +1,13 @@
-#!/usr/bin/perl
+#!/usr/local/perl-5.004_04/bin/perl
 #                              -*- Mode: Perl -*- 
 # $Basename: mkpackages $
-# $Revision: 1.8 $
+# $Revision: 1.10 $
 # Author          : Ulrich Pfeifer
 # Created On      : Wed Jan  7 15:04:13 1998
 # Last Modified By: Ulrich Pfeifer
-# Last Modified On: Mon May  4 19:36:34 1998
+# Last Modified On: Wed May  6 13:27:53 1998
 # Language        : CPerl
-# Update Count    : 19
+# Update Count    : 49
 # Status          : Unknown, Use with caution!
 # 
 # (C) Copyright 1998, Ulrich Pfeifer, all rights reserved.
@@ -19,7 +19,7 @@ use IO::File;
 use File::Find;
 
 # $Format: "my $VERSION = sprintf '%5.3f', ($ProjectMajorVersion$ * 100 + ($ProjectMinorVersion$-1))/1000;"$
-my $VERSION = sprintf '%5.3f', (0 * 100 + (12-1))/1000;
+my $VERSION = sprintf '%5.3f', (0 * 100 + (14-1))/1000;
 
 my $CPAN = shift;
 
@@ -80,6 +80,7 @@ sub wanted {
         warn "file=$file\n" if $DEBUG and length $file;
         undef $package;
         undef $version;
+        $out_buf = '';
         next BLOCK;
       }
 
@@ -119,6 +120,54 @@ for my $pack (sort keys %VERSION) {
   $fh->printf("%-30s\t%s\t%s\n", $pack,  $VERSION{$pack}, $PATH{$pack});
 }
 
+#
+# part2: generating checksums
+#
+
+use MD5;
+my $context = new MD5;
+
+find(\&chksum, "$CPAN/authors/id");
+
+sub chksum {
+  return unless -d $_;
+  my $dpath = $_;
+  opendir AD, "$dpath" or
+    die "Could not read '$dpath': $!\n";
+
+  my $chksum = new IO::File "> $dpath/CHECKSUMS"
+    or die "Could not write '$dpath/CHECKSUMS': $!\n";
+  my $found_one;
+  $chksum->printf("# CHECKSUMS file written on %s $0 $VERSION \n\$cksum = {\n",
+                  scalar localtime time);
+
+  for my $file (grep /\.tar\.(gz|Z)$/, readdir AD) {
+    my $path = "$dpath/$file";
+    my $fh = new IO::File "<$path"
+      or die "Reading $path: $!\n";
+    $context->reset;
+    $context->addfile($fh);
+    my $size = -s $path;
+    my $md5  = $context->hexdigest;
+    $fh = new IO::File "gzip -cd $path|"
+      or die "Reading $path: $!\n";
+    $context->reset;
+    $context->addfile($fh);
+    my $md5_ungz = $context->hexdigest;
+    $chksum->print("'$file' => {
+  shortname  => '$file',
+  size       => $size,
+  md5        => '$md5',
+  'md5-ungz' => '$md5_ungz',
+},
+");
+    $found_one++;
+  }
+  closedir AD;
+  $chksum->print("}\n");
+  unlink "$dpath/CHECKSUMS" unless $found_one;
+}
+closedir DIR;
 
 __END__
 
@@ -147,6 +196,11 @@ generates I<pseudo_CPAN_root>F</site/02packages.details.txt.gz>.
 =item I<pseudo_CPAN_root>F</site/01mailrc.txt.gz>
 
 Generated as empty file if missing.
+
+=item I<pseudo_CPAN_root>F</autors/id/**/CHECKSUMS>
+
+F<CHECKSUMS> fiels are generated in al directories below
+I<pseudo_CPAN_root>F</autors/id/>.
 
 =head1 SEE ALSO
 
