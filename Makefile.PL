@@ -23,7 +23,7 @@ WriteMakefile
   (
    'NAME'	=> 'CPAN::Site',
    # $Format: "   'VERSION'    => sprintf('%5.3f', ($ProjectMajorVersion$ * 100 + ( $ProjectMinorVersion$-1))/1000),"$ 
-   'VERSION'    => sprintf('%5.3f', (0 * 100 + ( 14-1))/1000),
+   'VERSION'    => sprintf('%5.3f', (0 * 100 + ( 15-1))/1000),
    'dist'       => {
                     COMPRESS => 'gzip -9f',
                     PREOP    => 'pod2text Site.pm > README',

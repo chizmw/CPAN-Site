@@ -19,7 +19,7 @@ use IO::File;
 use File::Find;
 
 # $Format: "my $VERSION = sprintf '%5.3f', ($ProjectMajorVersion$ * 100 + ($ProjectMinorVersion$-1))/1000;"$
-my $VERSION = sprintf '%5.3f', (0 * 100 + (14-1))/1000;
+my $VERSION = sprintf '%5.3f', (0 * 100 + (15-1))/1000;
 
 my $CPAN = shift;
 

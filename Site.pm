@@ -1,12 +1,12 @@
 #                              -*- Mode: Perl -*- 
 # $Basename: Site.pm $
-# $Revision: 1.10 $
+# $Revision: 1.11 $
 # Author          : Ulrich Pfeifer
 # Created On      : Wed Jan  7 11:42:46 1998
 # Last Modified By: Ulrich Pfeifer
-# Last Modified On: Wed May  6 13:30:41 1998
+# Last Modified On: Mon Jul 26 10:52:13 1999
 # Language        : CPerl
-# Update Count    : 13
+# Update Count    : 21
 # Status          : Unknown, Use with caution!
 # 
 # (C) Copyright 1998, Ulrich Pfeifer, all rights reserved.
@@ -19,10 +19,12 @@ use vars qw($VERSION @ISA);
 @ISA = qw(CPAN);
 
 # $Format: "$VERSION = sprintf '%5.3f', ($ProjectMajorVersion$ * 100 + ($ProjectMinorVersion$-1))/1000;"$
-$VERSION = sprintf '%5.3f', (0 * 100 + (14-1))/1000;
+$VERSION = sprintf '%5.3f', (0 * 100 + (15-1))/1000;
+
+CPAN::Config->load if CPAN::Config->can('load');
 
 # This line is edited by Makefile.PL. Don't change formatting etc.
-unshift @{$CPAN::Config->{urllist}}, q[http://www.forbar.com/CPAN/]
+unshift @{$CPAN::Config->{urllist}}, q[ftp://localhost/tmp/]
   if $CPAN::Config->{urllist};
 
 my $reload_orig;
