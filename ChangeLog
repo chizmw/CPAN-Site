@@ -1,0 +1,14 @@
+Thu Jan  8 12:26:42 1998  Ulrich Pfeifer  <pfeifer@wait.de>
+
+	* Makefile.PL: Ask for default URL
+
+Wed Jan  7 20:15:54 1998  Ulrich Pfeifer  <pfeifer@wait.de>
+
+	* mkpackages (wanted): now parses tar files to extract package
+ 	names and version
+
+Revision history for Perl extension CPAN::Site.
+
+0.01  Wed Jan  7 14:32:47 1998
+	- original version; created by h2xs 1.18
+

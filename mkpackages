@@ -1,0 +1,156 @@
+#!/usr/bin/perl
+#                              -*- Mode: Perl -*- 
+# $Basename: mkpackages $
+# $Revision: 1.5 $
+# Author          : Ulrich Pfeifer
+# Created On      : Wed Jan  7 15:04:13 1998
+# Last Modified By: Ulrich Pfeifer
+# Last Modified On: Thu Jan  8 13:08:11 1998
+# Language        : CPerl
+# Update Count    : 8
+# Status          : Unknown, Use with caution!
+# 
+# (C) Copyright 1998, Ulrich Pfeifer, all rights reserved.
+# 
+# 
+
+use strict;
+use IO::File;
+use File::Find;
+
+# $Format: "my $VERSION = sprintf '%5.3f', ($ProjectMajorVersion$ * 100 + ($ProjectMinorVersion$-1))/1000;"$
+my $VERSION = sprintf '%5.3f', (0 * 100 + (8-1))/1000;
+
+my $CPAN = shift;
+
+die "No such directory '$CPAN'\n" unless -d $CPAN;
+
+mkdir "$CPAN/site", 0755 or die "mkdir $CPAN/site: $!"
+  unless -d "$CPAN/site";
+
+unless (-f "$CPAN/site/01mailrc.txt.gz" ) {
+  new IO::File "|gzip >$CPAN/site/01mailrc.txt.gz"
+    or die "touch $CPAN/site/01mailrc.txt.gz: $!\n";
+}
+
+if (-f "$CPAN/site/02packages.details.txt.gz") {
+  rename
+    "$CPAN/site/02packages.details.txt.gz",
+    "$CPAN/site/02packages.details.txt.gz.bak"
+      or die "renaming $CPAN/site/02packages.details.txt.gz\n";
+}
+
+my $fh = new IO::File "|gzip >$CPAN/site/02packages.details.txt.gz"
+  or die "Generating $CPAN/site/02packages.details.txt.gz: $!\n";
+
+my %VERSION;
+my %PATH;
+my $DEBUG;
+
+find(\&wanted, "$CPAN/authors/id");
+
+sub register {
+  my ($file, $package, $version, $path) = @_;
+
+  warn "($file, $package, $version, $path)\n" if $DEBUG;
+  if ($file =~ /\.pm$/) {
+    next if exists $VERSION{$package} and $VERSION{$package} ge $version;
+    ($PATH{$package} = $path) =~ s!$CPAN/authors/!!;
+    $VERSION{$package} =
+      (defined $version and $version ne '') ? $version : 'undef';
+  }
+}
+
+sub wanted {
+  return unless /\.tar\.(gz|Z)$/;
+  return unless -f $_;
+
+  if (/\.tar\.(gz|Z)$/) {
+    warn "processing $File::Find::name ...\n";
+    my $fh = new IO::File "gzip -cd $File::Find::name|"
+      or die "gzip $File::Find::name: $!\n";
+    my ($file, $package, $version);
+    my $buf = '';
+
+
+    while ($fh->sysread($buf, 512)) {
+      if ($buf =~ /^(\S*?)\0/) {
+        register($file, $package, $version, $File::Find::name)
+          if $package;
+        $file = $1;
+        warn "file=$file\n" if $DEBUG and length $file;
+        undef $package;
+        undef $version;
+      }
+
+      for (split /\n/, $buf) {
+        if (/^package \s* ((\w+::)*\w+) \s* ;/x) {
+          $package = $1;
+          warn "package=$package\n" if $DEBUG;
+        } elsif (/^ \s* (?: \$ (\w+::)* VERSION \s* = \s* )+ (.*) $/x) {
+          $version = eval 'package foo; ' . $2;
+          warn "version=$version\n" if $DEBUG;
+        }
+      }
+    }
+    register($file, $package, $version, $File::Find::name)
+      if $package;
+  }
+}
+print "VERSION=$VERSION\n";
+my $lines = keys %VERSION;
+my $date  = gmtime;
+$fh->print (<<EOH)
+File:         02packages.details.txt
+URL:          http://www.perl.com/CPAN/site/02packages.details.txt
+Description:  Package names found in directory $CPAN/authors/id/
+Columns:      package name, version, path
+Intended-For: Automated fetch routines, namespace documentation.
+Line-Count:   $lines
+Written-By:   $0 $VERSION Ulrich Pfeifer <pfeifer\@wait.de>
+Last-Updated: $date GMT
+
+EOH
+  ;
+for my $pack (sort keys %VERSION) {
+  $fh->printf("%-30s\t%s\t%s\n", $pack,  $VERSION{$pack}, $PATH{$pack});
+}
+
+
+__END__
+
+=head1 NAME
+
+mkpackages -- generate CPAN.pm conformant 02packages.details.txt.gz
+
+=head1 SYNOPSIS
+
+B<mkpackages> I<pseudo_CPAN_root>
+
+=head1 WARNING
+
+This is not even alpha software and will be made obsolete by CPAN.pm
+extensions some day.
+
+=head1 DESCRIPTION
+
+This programs traverses I<pseudo_CPAN_root>F</authors/id> and
+generates I<pseudo_CPAN_root>F</site/02packages.details.txt.gz>.
+
+=head1 FILES
+
+=item I<pseudo_CPAN_root>F</site/02packages.details.txt.gz>
+
+=item I<pseudo_CPAN_root>F</site/01mailrc.txt.gz>
+
+Generated as empty file if missing.
+
+=head1 SEE ALSO
+
+CPAN::Site(3)
+
+=head1 AUTHOR
+
+Ulrich Pfeifer E<lt>F<pfeifer@wait.de>E<gt>
+
+=cut
