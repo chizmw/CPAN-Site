@@ -1,3 +1,7 @@
+Tue Jan 13 11:58:31 1998  Ulrich Pfeifer  <pfeifer@wait.de>
+
+	* mkpackages: Now removes 'id/' from path
+
 Thu Jan  8 12:26:42 1998  Ulrich Pfeifer  <pfeifer@wait.de>
 
 	* Makefile.PL: Ask for default URL

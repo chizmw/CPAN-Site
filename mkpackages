@@ -19,7 +19,7 @@ use IO::File;
 use File::Find;
 
 # $Format: "my $VERSION = sprintf '%5.3f', ($ProjectMajorVersion$ * 100 + ($ProjectMinorVersion$-1))/1000;"$
-my $VERSION = sprintf '%5.3f', (0 * 100 + (8-1))/1000;
+my $VERSION = sprintf '%5.3f', (0 * 100 + (9-1))/1000;
 
 my $CPAN = shift;
 
@@ -55,7 +55,7 @@ sub register {
   warn "($file, $package, $version, $path)\n" if $DEBUG;
   if ($file =~ /\.pm$/) {
     next if exists $VERSION{$package} and $VERSION{$package} ge $version;
-    ($PATH{$package} = $path) =~ s!$CPAN/authors/!!;
+    ($PATH{$package} = $path) =~ s!$CPAN/authors/id/!!;
     $VERSION{$package} =
       (defined $version and $version ne '') ? $version : 'undef';
   }
