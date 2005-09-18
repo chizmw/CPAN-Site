@@ -3,3 +3,4 @@ MANIFEST
 Makefile.PL
 Site.pm
 mkpackages
+META.yml                                 Module meta-data (added by MakeMaker)

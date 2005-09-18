@@ -24,7 +24,7 @@ $VERSION = sprintf '%5.3f', (0 * 100 + (15-1))/1000;
 CPAN::Config->load if CPAN::Config->can('load');
 
 # This line is edited by Makefile.PL. Don't change formatting etc.
-unshift @{$CPAN::Config->{urllist}}, q[ftp://localhost/tmp/]
+unshift @{$CPAN::Config->{urllist}}, q[/home/upf/src/perl/CPAN-Site/CPAN]
   if $CPAN::Config->{urllist};
 
 my $reload_orig;

@@ -1,3 +1,10 @@
+2005-09-18  Ulrich Pfeifer  <pfeifer@wait.de>
+
+	* Integrated patch from Matisse Enzer to generate .readme files.
+	* Switching from MD5 to Digest::MD5
+	* Gzip now called with the local file name $_.  $File::Find::name
+	should not have worked?
+
 1999-07-26  Ulrich Pfeifer  <upf@de.uu.net>
 
 	* Site.pm: Added CPAN::Config->load call which is required by

@@ -4,7 +4,7 @@
 # Author          : Ulrich Pfeifer
 # Created On      : Wed Jan  7 14:34:24 1998
 # Last Modified By: Ulrich Pfeifer
-# Last Modified On: Tue Jan 13 11:59:54 1998
+# Last Modified On: Sun Sep 18 19:47:33 2005
 # Language        : CPerl
 # 
 # (C) Copyright 1998, UUNET Deutschland GmbH, Germany
@@ -22,8 +22,7 @@ GetOptions(\%OPT, 'default!');
 WriteMakefile
   (
    'NAME'	=> 'CPAN::Site',
-   # $Format: "   'VERSION'    => sprintf('%5.3f', ($ProjectMajorVersion$ * 100 + ( $ProjectMinorVersion$-1))/1000),"$ 
-   'VERSION'    => sprintf('%5.3f', (0 * 100 + ( 15-1))/1000),
+   'VERSION'    => "0.020",
    'dist'       => {
                     COMPRESS => 'gzip -9f',
                     PREOP    => 'pod2text Site.pm > README',
