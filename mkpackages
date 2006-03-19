@@ -1,24 +1,22 @@
 #!/usr/bin/perl
 #                              -*- Mode: Perl -*- 
-# $Basename: mkpackages $
-# $Revision: 1.10 $
 # Author          : Ulrich Pfeifer
 # Created On      : Wed Jan  7 15:04:13 1998
 # Last Modified By: Ulrich Pfeifer
-# Last Modified On: Sun Sep 18 19:50:54 2005
+# Last Modified On: Sun Mar 19 10:18:56 2006
 # Language        : CPerl
-# Update Count    : 56
+# Update Count    : 59
 # Status          : Unknown, Use with caution!
-# 
-# (C) Copyright 1998,2005 Ulrich Pfeifer, all rights reserved.
-# 
-# 
+#
+# (C) Copyright 1998,2005,2006 Ulrich Pfeifer, all rights reserved.
 
 use strict;
+use English qw( -no_match_vars );
 use IO::File;
+use CPAN::Checksums qw(updatedir);
 use File::Find;
 
-my $VERSION = "0.020";
+my $VERSION = "0.030";
 
 my $CPAN = shift;
 
@@ -43,8 +41,10 @@ my $fh = new IO::File "|gzip >$CPAN/site/02packages.details.txt.gz"
   or die "Generating $CPAN/site/02packages.details.txt.gz: $!\n";
 
 my %VERSION;
+my %DIRS_TO_CHECKSUM;
 my %PATH;
 my $DEBUG;
+my $TAR_GZ_REGEX = qr/ \. tar \. (gz|Z) $/x;
 
 find(\&wanted, "$CPAN/authors/id");
 
@@ -61,61 +61,60 @@ sub register {
 }
 
 sub wanted {
-  return unless /\.tar\.(gz|Z)$/;
   return unless -f $_;
+  return unless /$TAR_GZ_REGEX/o;
+  $DIRS_TO_CHECKSUM{$File::Find::dir}++;
 
   my $readme_file;
-  if (/\.tar\.(gz|Z)$/) {
-    warn "processing $File::Find::name ...\n";
-    $readme_file = $_;
-    $readme_file =~ s/\.tar\.(gz|Z)$/\/README/;
-    warn "README file $readme_file\n" if $DEBUG;
-    my $fh = new IO::File "gzip -cd $_|"
-      or die "gzip $File::Find::name: $!\n";
-    my ($file, $package, $version);
-    my $in_buf  = '';
-    my $out_buf = '';
+  warn "processing $File::Find::name ...\n";
+  $readme_file = $_;
+  $readme_file =~ s/\.tar\.(gz|Z)$/\/README/;
+  warn "README file $readme_file\n" if $DEBUG;
+  my $fh = new IO::File "gzip -cd $_|"
+    or die "gzip $File::Find::name: $!\n";
+  my ($file, $package, $version);
+  my $in_buf  = '';
+  my $out_buf = '';
 
-    my $in_readme = 0;
-  BLOCK:
-    while ($fh->sysread($in_buf, 512)) {
-      if ($in_buf =~ /^(\S*?)\0/) {
-        $file = $1;
-        warn "file=$file\n" if $DEBUG and length $file;
-        if ($file eq $readme_file) {
-            $in_readme = 1;
-            my $output_filename = $readme_file;
-            $output_filename =~ s/\/README$/\.readme/; # Assumes Unix paths
-            open README_FILE, ">$output_filename" ||
-               die "Could not open .readme file $output_filename $!";
-            warn "Creating README file: $output_filename\n" if $DEBUG;
-        } else {
-            $in_readme = 0;
-            close README_FILE;
-        }
-        undef $package;
-        undef $version;
-        $out_buf = '';
-        next BLOCK;
+  my $in_readme = 0;
+BLOCK:
+  while ($fh->sysread($in_buf, 512)) {
+    if ($in_buf =~ /^(\S*?)\0/) {
+      $file = $1;
+      warn "file=$file\n" if $DEBUG and length $file;
+      if ($file eq $readme_file) {
+          $in_readme = 1;
+          my $output_filename = $readme_file;
+          $output_filename =~ s/\/README$/\.readme/; # Assumes Unix paths
+          open README_FILE, ">$output_filename" ||
+             die "Could not open .readme file $output_filename $!";
+          warn "Creating README file: $output_filename\n" if $DEBUG;
+      } else {
+          $in_readme = 0;
+          close README_FILE;
       }
+      undef $package;
+      undef $version;
+      $out_buf = '';
+      next BLOCK;
+    }
 
-      if ($in_readme) {
-          print README_FILE substr($in_buf, 0, index($in_buf, "\0"));
-      }
+    if ($in_readme) {
+        print README_FILE substr($in_buf, 0, index($in_buf, "\0"));
+    }
 
-      $out_buf .= $in_buf;
-      while ($out_buf =~ s/^([^\n]*)\n//) {
-        local $_ = $1;
-        if (/^\s* package \s* ((\w+::)*\w+) \s* ;/x) {
-          $package = $1;
-          warn "package=$package\n" if $DEBUG;
-        } elsif (/^ \s* (?: \$ (\w+::)* VERSION \s* = \s* )+ (.*) $/x) {
-          warn 'package foo; ' . $2 . "\n" if $DEBUG;
-          $version = eval 'package foo; ' . $2;
-          warn "version=$version\n" if $DEBUG;
-          register($file, $package, $version, $File::Find::name)
-            if $file and $package;
-        }
+    $out_buf .= $in_buf;
+    while ($out_buf =~ s/^([^\n]*)\n//) {
+      local $_ = $1;
+      if (/^\s* package \s* ((\w+::)*\w+) \s* ;/x) {
+        $package = $1;
+        warn "package=$package\n" if $DEBUG;
+      } elsif (/^ \s* (?: \$ (\w+::)* VERSION \s* = \s* )+ (.*) $/x) {
+        warn 'package foo; ' . $2 . "\n" if $DEBUG;
+        $version = eval 'package foo; ' . $2;
+        warn "version=$version\n" if $DEBUG;
+        register($file, $package, $version, $File::Find::name)
+          if $file and $package;
       }
     }
   }
@@ -143,50 +142,13 @@ for my $pack (sort keys %VERSION) {
 # part2: generating checksums
 #
 
-use Digest::MD5;
-my $context = Digest::MD5->new;
-
-find(\&chksum, "$CPAN/authors/id");
-
-sub chksum {
-  return unless -d $_;
-  my $dpath = $_;
-  opendir AD, "$dpath" or
-    die "Could not read '$dpath': $!\n";
-
-  my $chksum = new IO::File "> $dpath/CHECKSUMS"
-    or die "Could not write '$dpath/CHECKSUMS': $!\n";
-  my $found_one;
-  $chksum->printf("# CHECKSUMS file written on %s $0 $VERSION \n\$cksum = {\n",
-                  scalar localtime time);
-
-  for my $file (grep /\.tar\.(gz|Z)$/, readdir AD) {
-    my $path = "$dpath/$file";
-    my $fh = new IO::File "<$path"
-      or die "Reading $path: $!\n";
-    $context->reset;
-    $context->addfile($fh);
-    my $size = -s $path;
-    my $md5  = $context->hexdigest;
-    $fh = new IO::File "gzip -cd $path|"
-      or die "Reading $path: $!\n";
-    $context->reset;
-    $context->addfile($fh);
-    my $md5_ungz = $context->hexdigest;
-    $chksum->print("'$file' => {
-  shortname  => '$file',
-  size       => $size,
-  md5        => '$md5',
-  'md5-ungz' => '$md5_ungz',
-},
-");
-    $found_one++;
+foreach my $dir (keys %DIRS_TO_CHECKSUM) {
+  warn "$dir - Updating CHECKSUMS" if $DEBUG;
+  my $success = updatedir($dir); # From CPAN::Checksums
+  if ( $success ) {
+    warn "$dir - CHECKSUMS updated" if $DEBUG;
   }
-  closedir AD;
-  $chksum->print("}\n");
-  unlink "$dpath/CHECKSUMS" unless $found_one;
 }
-closedir DIR;
 
 __END__
 
@@ -223,7 +185,7 @@ Generated as empty file if missing.
 
 =item I<pseudo_CPAN_root>F</autors/id/**/CHECKSUMS>
 
-F<CHECKSUMS> fiels are generated in al directories below
+F<CHECKSUMS> fiels are generated in all directories below
 I<pseudo_CPAN_root>F</autors/id/>.
 
 =back

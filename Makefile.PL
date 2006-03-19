@@ -1,13 +1,11 @@
 #                              -*- Mode: Perl -*- 
-# $Basename: Makefile.PL $
-# $Revision: 1.8 $
 # Author          : Ulrich Pfeifer
 # Created On      : Wed Jan  7 14:34:24 1998
 # Last Modified By: Ulrich Pfeifer
-# Last Modified On: Sun Sep 18 19:47:33 2005
+# Last Modified On: Sun Mar 19 10:16:11 2006
 # Language        : CPerl
 # 
-# (C) Copyright 1998, UUNET Deutschland GmbH, Germany
+# (C) Copyright 1998, 2006 Ulrich Pfeifer
 # 
 
 use ExtUtils::MakeMaker;
@@ -22,20 +20,21 @@ GetOptions(\%OPT, 'default!');
 WriteMakefile
   (
    'NAME'	=> 'CPAN::Site',
-   'VERSION'    => "0.020",
+   'VERSION'    => "0.030",
    'dist'       => {
                     COMPRESS => 'gzip -9f',
                     PREOP    => 'pod2text Site.pm > README',
                    },
    'EXE_FILES'  => [ 'mkpackages' ],
-  );
+   'PREREQ_PM'  => { 'CPAN::Checksums' => 0},
+);
 
 sub init
 {
   my $use_defaults = shift;
-  
+
   my $default_url = 'file:/tmp/CPAN/';
-  
+
   # Use old default url if CPAN::Site is installed already
   eval { require CPAN::Site };
   if ($@ eq '') {
@@ -48,7 +47,7 @@ sub init
   }
   my $url = prompt("URL to your private CPAN?", $default_url)
     unless $use_defaults;
-  
+
   for ($url) {s/^\s+//; s/\s+$//;}
   $url ||= $default_url;
 

@@ -1,3 +1,23 @@
+2006-03-19  Ulrich Pfeifer  <upf@de.uu.net>
+
+	* mkpackages: applied patch from Matisse Enzer so that it uses
+	CPAN::Checksums to generate the CHECKSUMS files.  This probably
+	renders it useless for ancient per installations.  Even my debian
+	Perl 5.8 requires me to fetch these:
+
+	      Compress-Bzip2-2.09
+	      Compress-Zlib-1.41
+	      Data-Compare-0.13
+	      Text-Glob-0.06
+	      Number-Compare-0.01
+	      File-Find-Rule-0.28
+	      Digest-SHA-5.34
+	      CPAN-Checksums-1.039
+       
+	So fall back to the last version if that is too much hassle for
+	you.  I may think about a fall back mode if CPAN::Checksums is not
+	available.
+
 2005-09-18  Ulrich Pfeifer  <pfeifer@wait.de>
 
 	* Integrated patch from Matisse Enzer to generate .readme files.
