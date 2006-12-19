@@ -1,6 +1,9 @@
 ChangeLog
 MANIFEST
-Makefile.PL
-Site.pm
-mkpackages
 META.yml                                 Module meta-data (added by MakeMaker)
+Makefile.PL
+bin/cpansite
+bin/mkpackages
+lib/CPAN/Site.pm
+lib/CPAN/Site.pod
+lib/CPAN/Site/Index.pm

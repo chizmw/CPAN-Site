@@ -1,0 +1,269 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+
+use File::Basename  qw/basename/;
+use Getopt::Long    qw/GetOptions :config gnu_getopt/;
+Getopt::Long::Configure 'bundling';
+
+use CPAN::Site      qw/shell install/;
+
+use constant CPAN_CORE => 'ftp://ftp.cpan.org/pub/CPAN';
+
+#
+# Collect options
+#
+
+my $lazy        = 0;
+my $verbose     = 0;
+my $bigcpan_url;
+
+GetOptions 'cpan=s'     => \$bigcpan_url
+         , 'lazy|l!'    => \$lazy
+         , 'verbose|v+' => \$verbose
+   or exit 1;
+
+my $debug   = $verbose > 1;
+my $action  = shift || 'shell';
+
+defined $bigcpan_url or $bigcpan_url = CPAN_CORE;
+
+if($action eq 'index')
+{  my $mycpan = @ARGV ? shift @ARGV : $ENV{CPANSITE};
+   $mycpan    =~ s!^file:/+!!;
+
+   die "ERROR: specify top-directory of your archive\n"
+        unless $mycpan;
+
+    die "ERROR: directory '$mycpan' does not exist\n"
+        unless -e $mycpan;
+
+    eval "require CPAN::Site::Index";
+    $@ and die "Indexing cannot be done: $@\n";
+
+    CPAN::Site::Index::cpan_index
+     ( $mycpan, lazy => $lazy
+     , verbose => $verbose, debug => $debug
+     , bigcpan_url => $bigcpan_url
+     );
+}
+elsif($action eq 'shell')
+{   print "Entering CPAN::Site $CPAN::Site::VERSION interactive shell\n";
+    shell();
+}
+elsif($action eq 'install')
+{   install(@ARGV);
+}
+elsif($action =~ m/^\s*install\b/ )   # CPAN.pm compatible
+{   ($action, my @args) = split " ", $action;
+    install(@args);
+}
+else
+{   die "ERROR: action '$action' is not in use.\n";
+}
+
+exit 0;
+
+__END__
+
+=head1 NAME
+
+cpansite -- extend CPAN with private packages
+
+=head1 SYNOPSIS
+
+ cpansite [OPTIONS] index [MYCPAN]
+ cpansite [OPTIONS] install PACKAGE
+ cpansite [OPTIONS] [shell]
+
+  General options:
+    --verbose  -v     be verbose
+               -vv    debug output
+
+  Indexing options:
+    --lazy     -l     try to avoid redo-ing everything
+    --cpan <url>      some CPAN mirror
+
+=head1 DESCRIPTION
+
+The C<cpansite> script (old name C<mkpackages>) can be used
+(on the server) to create the required extended CPAN index, and
+(on the clients) to install those modules.  Before it can be used,
+you need some minor configuring, explained in the L</DETAILS> chapter,
+below in this manual page.
+
+Without any arguments, a CPAN install B<shell> is started.  Besides,
+an abbreviation for B<install> is available.  Other uses for the
+C<CPAN.pm> module are only supported in the traditional way:
+
+  perl -MCPAN::Site 'something'
+
+=head2 General options
+
+The following options are available in all modes:
+
+=over 4
+
+=item --verbose  or -v
+
+Produce verbose output, just enough to follow what is happening globally.
+There will not be a flood of distribution names or packages, only
+processing steps.
+
+=item -vv
+
+Produce a detailed trace, including decissions why some packages are
+picked or not, and where distributions are considered to be new or not.
+
+=item $CPANSITE
+
+The CPANSITE environment variable contains a list of white-space
+seperated urls which will be added before the list of url in the
+personal CPAN.pm configuration file F<.cpan/CPAN/MyConfig.pm>
+
+Example:
+
+  export CPANSITE="http://mycpan.example.com/local"
+  perl -MCPAN::Site -e shell
+  cpansite shell              # alternative
+
+=back
+
+=head2 Indexing options (mode B<index>)
+
+In "index mode", this script generates the required index for your own
+local CPAN additions.  See the L</DETAILS> chapter below.  You can either
+specify a directory which contains your cpan tree, or an environment
+variable named C<CPANSITE>.
+
+Additional options for "index" mode:
+
+=over 4
+
+=item --lazy or -l
+
+Try to avoid redo-ing everything: without this flag, all distributions on
+the local disk are processed and a new table is created.  With this flag,
+the process tries to handle only new distributions.
+
+=item --cpan <url>
+
+Update the list of "real" CPAN modules regularly (daily) from this
+url.  By default, the slow but most up-to-date CPAN source at
+C<ftp.cpan.org> is used.
+
+When this flag is explicitly empty
+  cpansite --cpan '' index
+
+then the "real" CPAN list is not included.  For instance, if you have
+downloaded all the releases from CPAN that you need, and you do not want
+unexpected extra downloads.  The downloaded versions will prevail over
+newer releases on CPAN, but you may download modules from the core CPAN
+that you do not expect.
+
+=back
+
+=head1 DETAILS
+
+=head2 Configuring the clients
+
+To get in touch with your own cpan archive, you have to provide
+an url to it.  Either add this to your C<CPAN.pm> configuration
+file (usually F<.cpan/CPAN/MyConfig.pm>) option C<urllist> or
+set the environment variable C<CPANSITE>.
+
+You probably also want to set the variable C<index_expire> to very short:
+the clients need to reload your local index as soon as possible, and not
+wait a day; just after your new local release is put in your local index,
+it must get visible to your client.
+
+You may also consider to have the CPAN install cache to be cleaned
+by the system.  Certainly when you set the cache size larger (required
+for more complex recursive installations) it is nice to have it removed
+after a (short) while.  Set C<keep_source_where> to a temporary
+directory.
+
+Example for  F<.cpan/CPAN/MyConfig.pm>
+
+ $CPAN::Config =
+  { ...
+  , index_expire => 1/600    # 5 minutes
+  , urllist => [ MYCPAN_URL, 'ftp://ftp.cpan.org/pub/CPAN' ]
+  , keep_source_where => '/tmp/cpan-cache'
+  , build_cache => 100       # MegaByte cache
+  , ...
+  };
+
+=head2 Generating an index
+
+Where the local index is the sole search list used at the client site,
+it will contain both your own packages and all of the other packages
+listed on CPAN.  You will need to rerun the indexing on regular basis
+(for instance one a day) to keep in sync with CPAN, for instance with
+cron.
+
+The output will only contain the last (highest) version of each file
+(which means that each file must contain a version number otherwise the
+text C<undef> is used for version)  In any case, the local packages get
+preference over the global CPAN packages, even when they have a lower
+version number.
+
+Example:
+
+ cpansite -vl index $MYCPAN
+
+The script traverses I<$CPANSITE>F</authors/id> and
+generates the I<$CPANSITE>F</modules/02packages.details.txt.gz>
+and C<CHECKSUMS> files.  It also will extract README files from the
+tar-balls in the F</authors/id> directories.
+
+The following files are created:
+
+=over
+
+=item F<MYCPAN/site/02packages.details.txt.gz>
+
+The file gerenated as index.
+
+=item F<MYCPAN/site/01mailrc.txt.gz>
+
+Generated as empty file.
+
+=item F<MYCPAN/authors/id/**/CHECKSUMS>
+
+C<CHECKSUMS> fiels are generated in all directories below
+F<MYCPAN/autors/id/>.
+
+=item F<MYCPAN/modules/**>
+
+Cache for file from the "real" CPAN.
+
+=back
+
+=head2 Adding your own modules to the local archive
+
+Not all versions of CPAN.pm work correctly; you may need to upgrade that
+first.
+
+Define a fake pause-id (here the demo is MYID), because if you use
+an existing pause-id you clients will start producing warnings about
+missing checksums on files retreived for the public archive.
+
+  mkdir -p MYCPAN/authors/id/M/MY/MYID
+  mv MyDist-1.00-tar.gz MYCPAN/authors/id/M/MY/MYID
+  cpansite -v -l index MYCPAN
+
+Although CPAN.pm claims to support a directory format of
+C<MYCPAN/authors/id/MYID>, experience shows that this does not
+work correctly with some recursively dependencies.
+
+=head1 SEE ALSO
+
+CPAN::Site(3pm), CPAN::Site::Index(3pm)
+
+=head1 AUTHORS
+
+Mark Overmeer E<lt>perl@overmeer.netE<gt>.
+Original implementation by Ulrich Pfeifer E<lt>pfeifer@wait.deE<gt>.
+
+=cut

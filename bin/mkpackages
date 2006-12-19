@@ -1,0 +1,9 @@
+#!/usr/bin/perl
+
+use File::Basename   qw/dirname/;
+use File::Spec;
+warn "WARNING: mkpackages replaced by 'cpansite index'\n";
+
+my $site = File::Spec->catfile(dirname($0), 'cpansite');
+exec $site, 'index', @ARGV;
+die "ERROR: unable to start $site\n";

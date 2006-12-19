@@ -1,3 +1,44 @@
+
+=== version history for CPAN::Site
+
+WISH: install by distribution name/version not only package/version
+
+version 0.14: Tue Dec 19 13:42:48 CET 2006
+	- use oodist (from OODoc) to produce manual pages
+	- official new maintainer MARKOV
+	- first public release of rewrite.
+
+version 0.13:
+	- depend on HTTP::Date if server
+	- index generation code moved from bin/cpansite into
+	  lib/CPAN/Site/Index.pm
+	- Add CPANSITE_ROLE environment variable to Makefile.PL
+	- show version of cpansite when shell is started
+
+version 0.12:
+	- 01mailrc is removed when the core cpan is merged in, and
+	  created otherwise.
+
+version 0.11:
+	- use HTTP::Date to produce timestamp on package
+
+version 0.10:
+	- use functions
+	- variables in CAPS are reserved for Perl
+	- %VERSION and %PATH combined in %pkgs, which contains
+	  [$version,$path] entries
+	- only install details file after success
+	- command-line option parsing
+	- trace to STDOUT, new option verbose
+	- CPAN::Site is very useful, and therefore don't call it ALPHA
+	- regex to find version now accepts "our"
+	- renamed mkpackages to 'cpansite index'
+	- cpansite also can start shell and install modules
+	- do not ask for URL at installation, because different people
+	  may want different local archives: use environment variable
+	  CPANSITE.
+	- moved Site.pm to lib/CPAN
+
 2006-03-19  Ulrich Pfeifer  <upf@de.uu.net>
 
 	* mkpackages: applied patch from Matisse Enzer so that it uses
