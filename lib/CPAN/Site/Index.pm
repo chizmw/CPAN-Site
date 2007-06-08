@@ -1,13 +1,14 @@
-# Copyrights 1998,2005-2006. For contributors see ChangeLog.
+# Copyrights 1998,2005-2007.
+#  For other contributors see ChangeLog.
 # See the manual pages for details on the licensing terms.
-# Pod stripped from pm file by OODoc 0.14.
+# Pod stripped from pm file by OODoc 1.00.
 
 use warnings;
 use strict;
 
 package CPAN::Site::Index;
 use vars '$VERSION';
-$VERSION = '0.14';
+$VERSION = '0.15';
 use base 'Exporter';
 our @EXPORT_OK = qw/cpan_index/;
 
@@ -92,6 +93,14 @@ sub cpan_index($@)
     unless(-f $mailrc)
     {   IO::File->new("| $gzip_write >$mailrc")
            or die "ERROR: cannot create $mailrc: $!\n";
+    }
+
+    # Create empty 03modlist
+    my $modlist    = "$mycpan/site/03modlist.data.gz";
+    print "create empty $modlist\n" if $verbose;
+    unless(-f $modlist)
+    {   IO::File->new("| $gzip_write >$modlist")
+           or die "ERROR: cannot create $modlist: $!\n";
     }
 }
 

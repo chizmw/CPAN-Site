@@ -3,6 +3,12 @@
 
 WISH: install by distribution name/version not only package/version
 
+version 0.15: Fri Jun  8 17:01:30 CEST 2007
+	- document how to change urllist from CPAN.pm shell [Abe Timmerman]
+	- removed short filename-support (MSDOS) from CPAN::Site
+	- use empty 03modlist.data.gz
+	- add t/pod.t
+
 version 0.14: Tue Dec 19 13:42:48 CET 2006
 	- use oodist (from OODoc) to produce manual pages
 	- official new maintainer MARKOV

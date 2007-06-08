@@ -10,7 +10,11 @@ unless(defined $role)
     prompt "Running client or server?", 'client';
 }
 
-my @prereq;
+my @prereq =
+ ( Test::More        => 0.50
+ , Test::Pod         => 1.00
+ );;
+
 push @prereq,
  ( 'CPAN::Checksums' => 0
  , 'Getopt::Long'    => 0
@@ -21,7 +25,7 @@ push @prereq,
 WriteMakefile
  ( NAME       => 'CPAN::Site'
  , ABSTRACT   => 'adding site local modules'
- , VERSION    => '0.14'
+ , VERSION    => '0.15'
 
  , EXE_FILES  =>
     [ 'bin/mkpackages'
@@ -36,17 +40,17 @@ WriteMakefile
 sub MY::postamble { <<'__POSTAMBLE' }
 
 # for DIST
-RAWDIR          = ../public_html/cpansite/raw
-DISTDIR         = ../public_html/cpansite/source
+RAWDIR          = ../public_html/cpan-site/raw
+DISTDIR         = ../public_html/cpan-site/source
 LICENSE         = artistic
 
 # for POD
 FIRST_YEAR      = 1998,2005
 EMAIL           = perl@overmeer.net
-WEBSITE         = http://perl.overmeer.net/cpansite/
+WEBSITE         = http://perl.overmeer.net/cpan-site/
 
 # for HTML
-#HTML_OUTPUT     = ../public_html/cpansite/html
-#HTML_DOCROOT    = /cpansite/html
+#HTML_OUTPUT     = ../public_html/cpan-site/html
+#HTML_DOCROOT    = /cpan-site/html
 
 __POSTAMBLE

@@ -24,12 +24,12 @@ switches to the next URL in the list pointing to a real CPAN server.
 
 =head1 SEE ALSO
 
-This module is part of CPAN-Site distribution version 0.14,
-built on December 19, 2006. Website: F<http://perl.overmeer.net/cpansite/>
+This module is part of CPAN-Site distribution version 0.15,
+built on June 08, 2007. Website: F<http://perl.overmeer.net/cpan-site/>
 
 =head1 LICENSE
 
-Copyrights 1998,2005-2006. For contributors see ChangeLog.
+Copyrights 1998,2005-2007. For other contributors see ChangeLog.
 
 This program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

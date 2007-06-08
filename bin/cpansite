@@ -194,6 +194,12 @@ Example for  F<.cpan/CPAN/MyConfig.pm>
   , ...
   };
 
+To avoid manually editing the CPAN config file one can also set the
+MYCPAN_URL from the shell:
+
+  cpan> o conf urllist unshift MYCPAN_URL
+  cpan> o conf commit
+
 =head2 Generating an index
 
 Where the local index is the sole search list used at the client site,
@@ -217,28 +223,16 @@ generates the I<$CPANSITE>F</modules/02packages.details.txt.gz>
 and C<CHECKSUMS> files.  It also will extract README files from the
 tar-balls in the F</authors/id> directories.
 
-The following files are created:
+Created is the long index file
+F<MYCPAN/site/02packages.details.txt.gz>.  An empty
+F<MYCPAN/site/01mailrc.txt.gz> and
+F<MYCPAN/site/03modlist.data.gz> are generated as well: most people
+do not use those (anymore) so why bother?
 
-=over
+F<MYCPAN/authors/id/**/CHECKSUMS> fiels are generated in all directories
+below F<MYCPAN/autors/id/>.
 
-=item F<MYCPAN/site/02packages.details.txt.gz>
-
-The file gerenated as index.
-
-=item F<MYCPAN/site/01mailrc.txt.gz>
-
-Generated as empty file.
-
-=item F<MYCPAN/authors/id/**/CHECKSUMS>
-
-C<CHECKSUMS> fiels are generated in all directories below
-F<MYCPAN/autors/id/>.
-
-=item F<MYCPAN/modules/**>
-
-Cache for file from the "real" CPAN.
-
-=back
+In F<MYCPAN/modules/**>, files from the "real" CPAN are cached.
 
 =head2 Adding your own modules to the local archive
 

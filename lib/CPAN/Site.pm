@@ -1,13 +1,14 @@
-# Copyrights 1998,2005-2006. For contributors see ChangeLog.
+# Copyrights 1998,2005-2007.
+#  For other contributors see ChangeLog.
 # See the manual pages for details on the licensing terms.
-# Pod stripped from pm file by OODoc 0.14.
+# Pod stripped from pm file by OODoc 1.00.
 
 use warnings;
 use strict;
 
 package CPAN::Site;
 use vars '$VERSION';
-$VERSION = '0.14';
+$VERSION = '0.15';
 use base 'CPAN';
 
 my $reload_orig;
@@ -34,7 +35,7 @@ my $last_time = 0;
 
 no warnings 'redefine';
 sub CPAN::Index::reload {
-   my($cl,$force) = @_;
+   my($cl, $force) = @_;
    my $time = time;
 
    # Need this code duplication since reload does not return something
@@ -48,18 +49,12 @@ sub CPAN::Index::reload {
 
    $last_time = $time;
 
-   my $needshort = $^O eq "dos";
-
    $reload_orig->(@_);
 
+   $cl->rd_authindex($cl->reload_x("site/01mailrc.txt.gz", '', $force));
    $cl->rd_modpacks(
-     $cl->reload_x( "site/02packages.details.txt.gz"
-                  , ($needshort ? "12packag.gz" : "")
-                  , $force));
-   $cl->rd_authindex(
-     $cl->reload_x( "site/01mailrc.txt.gz"
-                  , ($needshort ? "11mailrc.gz" : "")
-                  , $force));
+     $cl->reload_x("site/02packages.details.txt.gz", '', $force));
+   $cl->rd_modlist($cl->reload_x("site/03modlist.data.gz", '', $force));
 
    # CPAN Master overwrites?
    $reload_orig->(@_);
