@@ -3,6 +3,10 @@
 
 WISH: install by distribution name/version not only package/version
 
+version 0.16: Fri Nov  9 23:38:10 CET 2007
+	- use package directory explicitly in the creation of the
+	  readme extract. [Matisse Enzer]
+
 version 0.15: Fri Jun  8 17:01:30 CEST 2007
 	- document how to change urllist from CPAN.pm shell [Abe Timmerman]
 	- removed short filename-support (MSDOS) from CPAN::Site

@@ -1,14 +1,14 @@
 # Copyrights 1998,2005-2007.
 #  For other contributors see ChangeLog.
 # See the manual pages for details on the licensing terms.
-# Pod stripped from pm file by OODoc 1.00.
+# Pod stripped from pm file by OODoc 1.03.
 
 use warnings;
 use strict;
 
 package CPAN::Site::Index;
 use vars '$VERSION';
-$VERSION = '0.15';
+$VERSION = '0.16';
 use base 'Exporter';
 our @EXPORT_OK = qw/cpan_index/;
 
@@ -18,6 +18,7 @@ use File::Copy      qw/copy move/;
 use File::Basename  qw/basename/;
 use Net::FTP        ();
 use HTTP::Date      qw/time2str/;
+use File::Spec      ();
 
 my $tar_gz      = qr/ \.tar \.(gz|Z) $/x;
 my $gzip_read   = 'gzip -cd';
@@ -156,13 +157,13 @@ sub inspect_entry
 
    (my $readme_file = basename $fn) =~ s!$tar_gz!/README!;
 
-   my $fh = IO::File->new("$gzip_read $fn |")
+   my $fh = IO::File->new("$gzip_read '$fn' |")
        or die "ERROR: failed to read distribution file $fn': $!\n";
 
    my ($file, $package, $version);
    my $in_buf    = '';
    my $out_buf   = '';
-   my $in_readme = 0;
+   my $readme_fh;
 
 BLOCK:
    while ($fh->sysread($in_buf, 512))
@@ -175,19 +176,18 @@ BLOCK:
 #         print "file=$file\n" if $debug && length $file;
 
           if($file eq $readme_file)
-          {  $in_readme = 1;
-             print "found README in $readme_file\n" if $debug;
-             (my $output_filename = $readme_file)
-                 =~ s/\/README$/\.readme/;   # Assumes Unix paths
+          {  print "found README in $readme_file\n" if $debug;
 
-             open README_FILE, ">$output_filename" ||
-                die "Could not open .readme file $output_filename $!";
+             my $outputfn = File::Spec->catfile($File::Find::dir, $readme_file);
+             $outputfn =~ s/\bREADME$/\.readme/;
 
-             warn "Creating README file: $output_filename\n" if $debug;
+             $readme_fh = IO::File->open('>', $outputfn)
+                 or die "Could not write to README file $outputfn: $!";
+
+             warn "Creating README file: $outputfn\n" if $debug;
           }
           else
-          {  $in_readme = 0;
-             close README_FILE;
+          {  undef $readme_fh;
           }
 
          undef $package;
@@ -196,8 +196,8 @@ BLOCK:
          next BLOCK;
       }
 
-      print README_FILE substr($in_buf, 0, index($in_buf, "\0"))
-         if $in_readme;
+      $readme_fh->print(substr $in_buf, 0, index($in_buf, "\0"))
+         if $readme_fh;
 
       $out_buf .= $in_buf;
       while ($out_buf =~ s/^([^\n]*)\n//)

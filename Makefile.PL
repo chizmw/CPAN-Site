@@ -25,7 +25,7 @@ push @prereq,
 WriteMakefile
  ( NAME       => 'CPAN::Site'
  , ABSTRACT   => 'adding site local modules'
- , VERSION    => '0.15'
+ , VERSION    => '0.16'
 
  , EXE_FILES  =>
     [ 'bin/mkpackages'
@@ -33,6 +33,7 @@ WriteMakefile
     ]
 
  , PREREQ_PM  => { @prereq }
+ , LICENSE    => 'perl'
  );
 
 #### the next lines are added for OODoc, which generates the

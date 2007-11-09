@@ -1,6 +1,5 @@
 ChangeLog
 MANIFEST
-META.yml                                 Module meta-data (added by MakeMaker)
 Makefile.PL
 README
 bin/cpansite
@@ -9,3 +8,4 @@ lib/CPAN/Site.pm
 lib/CPAN/Site.pod
 lib/CPAN/Site/Index.pm
 t/pod.t
+META.yml                                 Module meta-data (added by MakeMaker)
