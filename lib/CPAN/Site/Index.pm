@@ -1,4 +1,4 @@
-# Copyrights 1998,2005-2007.
+# Copyrights 1998,2005-2008.
 #  For other contributors see ChangeLog.
 # See the manual pages for details on the licensing terms.
 # Pod stripped from pm file by OODoc 1.03.
@@ -8,7 +8,7 @@ use strict;
 
 package CPAN::Site::Index;
 use vars '$VERSION';
-$VERSION = '0.16';
+$VERSION = '0.17';
 use base 'Exporter';
 our @EXPORT_OK = qw/cpan_index/;
 
@@ -113,30 +113,26 @@ sub cpan_index($@)
 my ($topdir, $findpkgs, %finddirs, $olddists);
 
 sub package_inventory($$)
-{   (my $cpan, $olddists) = @_;
-    $topdir = "$cpan/authors/id";
-    print "creating inventory from $topdir\n" if $verbose;
+{  (my $cpan, $olddists) = @_;
+   $topdir = "$cpan/authors/id";
+   print "creating inventory from $topdir\n" if $verbose;
 
-    find { wanted   => \&inspect_entry
-         , no_chdir => 1
-         }
-       , $topdir;
-    ($findpkgs, \%finddirs);
+   find {wanted => \&inspect_entry, no_chdir => 1}, $topdir;
+   ($findpkgs, \%finddirs);
 }
 
 sub register($$$)
-{   my ($package, $version, $dist) = @_;
-    print "reg(@_)\n" if $debug;
+{  my ($package, $version, $dist) = @_;
+   print "reg(@_)\n" if $debug;
 
-    return if exists $findpkgs->{$package}
-           && $findpkgs->{$package}[0] ge $version;
+   return if exists $findpkgs->{$package}
+          && $findpkgs->{$package}[0] ge $version;
 
-    $findpkgs->{$package} = [ $version, $dist ];
+   $findpkgs->{$package} = [ $version, $dist ];
 }
 
 sub inspect_entry
-{
-   my $fn   = $File::Find::name;
+{  my $fn   = $File::Find::name;
    return if ! -f $fn || $fn !~ $tar_gz;
 
    print "inspecting $fn\n" if $debug;
@@ -178,10 +174,17 @@ BLOCK:
           if($file eq $readme_file)
           {  print "found README in $readme_file\n" if $debug;
 
-             my $outputfn = File::Spec->catfile($File::Find::dir, $readme_file);
-             $outputfn =~ s/\bREADME$/\.readme/;
+#            my $outputfn = File::Spec->catfile($File::Find::dir, $readme_file);
+#            $outputfn =~ s/\bREADME$/\.readme/;
 
-             $readme_fh = IO::File->open('>', $outputfn)
+             my $readmefn = basename $dist;
+             $readmefn =~ s/\.tar\.gz/\.readme/;
+             my $outputfn = File::Spec->catfile($File::Find::dir, $readmefn);
+             print "README full path '$outputfn'\n" if $debug;
+
+
+
+             $readme_fh = IO::File->new($outputfn, 'w')
                  or die "Could not write to README file $outputfn: $!";
 
              warn "Creating README file: $outputfn\n" if $debug;
@@ -250,6 +253,7 @@ sub merge_core_cpan($$$)
 sub create_details($$$$)
 {  my ($details, $filename, $pkgs, $lazy) = @_;
 
+   print "creating package details file '$filename'\n" if $debug;
    my $fh = IO::File->new("| $gzip_write >$filename")
       or die "Generating $filename: $!\n";
 
@@ -260,6 +264,7 @@ sub create_details($$$$)
    print "produced list of $lines packages $how\n" if $verbose;
 
    my $program     = basename $0;
+   my $module      = __PACKAGE__;
    $fh->print (<<__HEADER);
 File:         02packages.details.txt
 URL:          file:$details
@@ -267,7 +272,7 @@ Description:  Packages listed in CPAN and local repository
 Columns:      package name, version, path
 Intended-For: Standard CPAN with additional private resources
 Line-Count:   $lines
-Written-By:   $program $VERSION ($how)
+Written-By:   $program with $module $VERSION ($how)
 Last-Updated: $date
 
 __HEADER

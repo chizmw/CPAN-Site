@@ -3,6 +3,11 @@
 
 WISH: install by distribution name/version not only package/version
 
+version 0.17: Wed Jan 30 16:44:07 CET 2008
+	- fix for open file error [Matisse Enzer]
+	- different way of defining the README output filename [Matisse Enzer]
+	- minor output improvements. [Matisse Enzer]
+
 version 0.16: Fri Nov  9 23:38:10 CET 2007
 	- use package directory explicitly in the creation of the
 	  readme extract. [Matisse Enzer]
