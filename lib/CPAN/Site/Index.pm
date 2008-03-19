@@ -1,14 +1,14 @@
 # Copyrights 1998,2005-2008.
 #  For other contributors see ChangeLog.
 # See the manual pages for details on the licensing terms.
-# Pod stripped from pm file by OODoc 1.03.
+# Pod stripped from pm file by OODoc 1.04.
 
 use warnings;
 use strict;
 
 package CPAN::Site::Index;
 use vars '$VERSION';
-$VERSION = '0.17';
+$VERSION = '0.18';
 use base 'Exporter';
 our @EXPORT_OK = qw/cpan_index/;
 
@@ -114,7 +114,9 @@ my ($topdir, $findpkgs, %finddirs, $olddists);
 
 sub package_inventory($$)
 {  (my $cpan, $olddists) = @_;
-   $topdir = "$cpan/authors/id";
+   $topdir   = "$cpan/authors/id";
+   $findpkgs = {};
+
    print "creating inventory from $topdir\n" if $verbose;
 
    find {wanted => \&inspect_entry, no_chdir => 1}, $topdir;
@@ -125,10 +127,21 @@ sub register($$$)
 {  my ($package, $version, $dist) = @_;
    print "reg(@_)\n" if $debug;
 
+   my $registered_version = $findpkgs->{$package}[0] || '';
+
    return if exists $findpkgs->{$package}
-          && $findpkgs->{$package}[0] ge $version;
+          && $registered_version ge $version;
 
    $findpkgs->{$package} = [ $version, $dist ];
+}
+
+sub package_on_usual_location($)
+{  my $file  = shift;
+   my ($top, $subdir, @rest) = File::Spec->splitdir($file);
+   defined $subdir or return 0;
+
+      !@rest             # path is at top-level of distro
+   || $subdir eq 'lib';  # inside lib
 }
 
 sub inspect_entry
@@ -137,7 +150,7 @@ sub inspect_entry
 
    print "inspecting $fn\n" if $debug;
 
-   (my $dist = $fn) =~ s!$topdir/!!;
+   (my $dist = $fn) =~ s!^$topdir/!!;
 
    if(exists $olddists->{$dist})
    {  print "no change in $dist\n" if $debug;
@@ -157,16 +170,20 @@ sub inspect_entry
        or die "ERROR: failed to read distribution file $fn': $!\n";
 
    my ($file, $package, $version);
-   my $in_buf    = '';
-   my $out_buf   = '';
+   my $in_buf       = '';
+   my $out_buf      = '';
+   my $tarball_name = basename $dist;
+   my $dist_name    = $tarball_name =~ /(.*)\.tar\.gz/ ? $1 : undef;
    my $readme_fh;
 
 BLOCK:
-   while ($fh->sysread($in_buf, 512))
+   while($fh->sysread($in_buf, 512))
    {
       if($in_buf =~ /^(\S*?)\0/)
       {
           $file = $1;
+          substr($file, 0, length $dist_name) eq $dist_name
+              or next BLOCK;
 
 # when the package contains non-text files, this produces garbage
 #         print "file=$file\n" if $debug && length $file;
@@ -174,15 +191,12 @@ BLOCK:
           if($file eq $readme_file)
           {  print "found README in $readme_file\n" if $debug;
 
-#            my $outputfn = File::Spec->catfile($File::Find::dir, $readme_file);
+#            my $outputfn = File::Spec->catfile($File::Find::dir,$readme_file);
 #            $outputfn =~ s/\bREADME$/\.readme/;
 
-             my $readmefn = basename $dist;
-             $readmefn =~ s/\.tar\.gz/\.readme/;
+             my $readmefn = "$distname.readme";
              my $outputfn = File::Spec->catfile($File::Find::dir, $readmefn);
              print "README full path '$outputfn'\n" if $debug;
-
-
 
              $readme_fh = IO::File->new($outputfn, 'w')
                  or die "Could not write to README file $outputfn: $!";
@@ -203,19 +217,24 @@ BLOCK:
          if $readme_fh;
 
       $out_buf .= $in_buf;
-      while ($out_buf =~ s/^([^\n]*)\n//)
+      while($out_buf =~ s/^([^\n]*)\n//)
       {
          local $_ = $1;
+         local $VERSION;  # destroyed by eval
+
          if( m/^\s* package \s* ((\w+\:\:)*\w+) \s* ;/x )
          {  $package = $1;
             print "package=$package\n" if $debug;
+            next;
          }
-         elsif( m/^ (?:our)? \s* \$ (?: \w+\:\:)* VERSION \s* \= \s* (.*)/x )
+
+         if( m/^ (?:our)? \s* \$ (?: \w+\:\:)* VERSION \s* \= \s* (.*)/x )
          {  $version = eval "my \$v = $1";
             print "version=$version\n" if $debug;
 
             register $package, $version, $dist
-                if $file && $file =~ m/\.pm$/ && $package;
+                if $file && $package && $file =~ m/\.pm$/
+                && package_on_usual_location $file;
          }
       }
    }
@@ -267,12 +286,12 @@ sub create_details($$$$)
    my $module      = __PACKAGE__;
    $fh->print (<<__HEADER);
 File:         02packages.details.txt
-URL:          file:$details
+URL:          file://$details
 Description:  Packages listed in CPAN and local repository
 Columns:      package name, version, path
 Intended-For: Standard CPAN with additional private resources
 Line-Count:   $lines
-Written-By:   $program with $module $VERSION ($how)
+Written-By:   $program with $module $CPAN::Site::Index::VERSION ($how)
 Last-Updated: $date
 
 __HEADER

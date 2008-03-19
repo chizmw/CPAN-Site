@@ -1,14 +1,14 @@
 # Copyrights 1998,2005-2008.
 #  For other contributors see ChangeLog.
 # See the manual pages for details on the licensing terms.
-# Pod stripped from pm file by OODoc 1.03.
+# Pod stripped from pm file by OODoc 1.04.
 
 use warnings;
 use strict;
 
 package CPAN::Site;
 use vars '$VERSION';
-$VERSION = '0.17';
+$VERSION = '0.18';
 use base 'CPAN';
 
 my $reload_orig;

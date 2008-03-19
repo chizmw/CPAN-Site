@@ -30,7 +30,7 @@ defined $bigcpan_url or $bigcpan_url = CPAN_CORE;
 
 if($action eq 'index')
 {  my $mycpan = @ARGV ? shift @ARGV : $ENV{CPANSITE};
-   $mycpan    =~ s!^file:/+!!;
+   $mycpan    =~ s!^file:(?://)?!!;
 
    die "ERROR: specify top-directory of your archive\n"
         unless $mycpan;

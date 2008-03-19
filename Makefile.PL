@@ -13,7 +13,7 @@ unless(defined $role)
 my @prereq =
  ( Test::More        => 0.50
  , Test::Pod         => 1.00
- );;
+ );
 
 push @prereq,
  ( 'CPAN::Checksums' => 0
@@ -25,7 +25,7 @@ push @prereq,
 WriteMakefile
  ( NAME       => 'CPAN::Site'
  , ABSTRACT   => 'adding site local modules'
- , VERSION    => '0.17'
+ , VERSION    => '0.18'
 
  , EXE_FILES  =>
     [ 'bin/mkpackages'

@@ -3,6 +3,13 @@
 
 WISH: install by distribution name/version not only package/version
 
+version 0.18: Wed Mar 19 18:35:37 CET 2008
+	- cpansite script should strip file: with two slashes or none,
+	  to permit absolute path.
+	- fix when local archive is empty
+	- only take pm's from lib- and top-dir, not f.i. from the
+	  test-scripts [Matisse Enzer]
+
 version 0.17: Wed Jan 30 16:44:07 CET 2008
 	- fix for open file error [Matisse Enzer]
 	- different way of defining the README output filename [Matisse Enzer]
