@@ -3,6 +3,9 @@
 
 WISH: install by distribution name/version not only package/version
 
+version 0.19: Fri Mar 21 08:13:19 CET 2008
+	- fix in distname [Matisse Enzer]
+
 version 0.18: Wed Mar 19 18:35:37 CET 2008
 	- cpansite script should strip file: with two slashes or none,
 	  to permit absolute path.

@@ -8,7 +8,7 @@ use strict;
 
 package CPAN::Site::Index;
 use vars '$VERSION';
-$VERSION = '0.18';
+$VERSION = '0.19';
 use base 'Exporter';
 our @EXPORT_OK = qw/cpan_index/;
 
@@ -194,7 +194,7 @@ BLOCK:
 #            my $outputfn = File::Spec->catfile($File::Find::dir,$readme_file);
 #            $outputfn =~ s/\bREADME$/\.readme/;
 
-             my $readmefn = "$distname.readme";
+             my $readmefn = $dist_name. ".readme";
              my $outputfn = File::Spec->catfile($File::Find::dir, $readmefn);
              print "README full path '$outputfn'\n" if $debug;
 

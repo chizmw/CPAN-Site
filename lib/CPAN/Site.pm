@@ -8,7 +8,7 @@ use strict;
 
 package CPAN::Site;
 use vars '$VERSION';
-$VERSION = '0.18';
+$VERSION = '0.19';
 use base 'CPAN';
 
 my $reload_orig;
