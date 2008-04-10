@@ -29,11 +29,12 @@ my $action  = shift || 'shell';
 defined $bigcpan_url or $bigcpan_url = CPAN_CORE;
 
 if($action eq 'index')
-{  my $mycpan = @ARGV ? shift @ARGV : $ENV{CPANSITE};
-   $mycpan    =~ s!^file:(?://)?!!;
+{   my $mycpan = @ARGV ? shift @ARGV : $ENV{CPANSITE};
 
-   die "ERROR: specify top-directory of your archive\n"
+    die "ERROR: specify top-directory of your archive as argument\n"
         unless $mycpan;
+
+    $mycpan    =~ s!^file:(?://)?!!;
 
     die "ERROR: directory '$mycpan' does not exist\n"
         unless -e $mycpan;
@@ -48,7 +49,8 @@ if($action eq 'index')
      );
 }
 elsif($action eq 'shell')
-{   print "Entering CPAN::Site $CPAN::Site::VERSION interactive shell\n";
+{   my $version = $CPAN::Site::VERSION || 0;
+    print "Entering CPAN::Site $version interactive shell\n";
     shell();
 }
 elsif($action eq 'install')
@@ -89,7 +91,7 @@ cpansite -- extend CPAN with private packages
 The C<cpansite> script (old name C<mkpackages>) can be used
 (on the server) to create the required extended CPAN index, and
 (on the clients) to install those modules.  Before it can be used,
-you need some minor configuring, explained in the L</DETAILS> chapter,
+you need some minor configuring, explained in the L</DETAILS> head1,
 below in this manual page.
 
 Without any arguments, a CPAN install B<shell> is started.  Besides,
@@ -97,6 +99,9 @@ an abbreviation for B<install> is available.  Other uses for the
 C<CPAN.pm> module are only supported in the traditional way:
 
   perl -MCPAN::Site 'something'
+
+Not all versions of CPAN.pm work correctly; you may need to upgrade that
+first.
 
 =head2 General options
 
@@ -132,7 +137,7 @@ Example:
 =head2 Indexing options (mode B<index>)
 
 In "index mode", this script generates the required index for your own
-local CPAN additions.  See the L</DETAILS> chapter below.  You can either
+local CPAN additions.  See the L</DETAILS> head1 below.  You can either
 specify a directory which contains your cpan tree, or an environment
 variable named C<CPANSITE>.
 
@@ -165,7 +170,12 @@ that you do not expect.
 
 =head1 DETAILS
 
-=head2 Configuring the clients
+Alex Efros contributed a shorter description of how to get things to
+work.  You can find this in the CPAN::Site manual page.
+
+=head2 Configuration
+
+=head3 Configuring the clients
 
 To get in touch with your own cpan archive, you have to provide
 an url to it.  Either add this to your C<CPAN.pm> configuration
@@ -200,7 +210,7 @@ MYCPAN_URL from the shell:
   cpan> o conf urllist unshift MYCPAN_URL
   cpan> o conf commit
 
-=head2 Generating an index
+=head3 Generating an index
 
 Where the local index is the sole search list used at the client site,
 it will contain both your own packages and all of the other packages
@@ -216,44 +226,37 @@ version number.
 
 Example:
 
+ MYCPAN=/location/of/my/data/on/disk
  cpansite -vl index $MYCPAN
 
-The script traverses I<$CPANSITE>F</authors/id> and
-generates the I<$CPANSITE>F</modules/02packages.details.txt.gz>
-and C<CHECKSUMS> files.  It also will extract README files from the
-tar-balls in the F</authors/id> directories.
+The script traverses I<$MYCPAN>F</authors/id> and merges this
+with the I<$MYCPAN>F</modules/02packages.details.txt.gz> data,
+a copy from the original CPAN.  It creates a C<CHECKSUMS> file, and
+README files from each tar-ball.  The result is a
+I<$MYCPAN>F</site/02packages.details.txt.gz> file.
 
-Created is the long index file
-F<MYCPAN/site/02packages.details.txt.gz>.  An empty
-F<MYCPAN/site/01mailrc.txt.gz> and
-F<MYCPAN/site/03modlist.data.gz> are generated as well: most people
-do not use those (anymore) so why bother?
+The files F<$MYCPAN/authors/01mailrc.txt.gz> and
+F<$MYCPAN/modules/03modlist.data.gz> are downloaded from CPAN.  This
+will reduce the number of failing retreivals when you start installing
+software.
 
-F<MYCPAN/authors/id/**/CHECKSUMS> fiels are generated in all directories
-below F<MYCPAN/autors/id/>.
-
-In F<MYCPAN/modules/**>, files from the "real" CPAN are cached.
-
-=head2 Adding your own modules to the local archive
-
-Not all versions of CPAN.pm work correctly; you may need to upgrade that
-first.
+=head3 Adding your own modules to the local archive
 
 Define a fake pause-id (here the demo is MYID), because if you use
 an existing pause-id you clients will start producing warnings about
 missing checksums on files retreived for the public archive.
 
-  mkdir -p MYCPAN/authors/id/M/MY/MYID
-  mv MyDist-1.00-tar.gz MYCPAN/authors/id/M/MY/MYID
-  cpansite -v -l index MYCPAN
+  mkdir -p $MYCPAN/authors/id/M/MY/MYID
+  mv MyDist-1.00-tar.gz $MYCPAN/authors/id/M/MY/MYID
+  cpansite -v -l index $MYCPAN
 
 Although CPAN.pm claims to support a directory format of
-C<MYCPAN/authors/id/MYID>, experience shows that this does not
+C<$MYCPAN/authors/id/MYID>, experience shows that this does not
 work correctly with some recursively dependencies.
 
 =head1 SEE ALSO
 
-CPAN::Site(3pm), CPAN::Site::Index(3pm)
+CPAN::Site(3pm)
 
 =head1 AUTHORS
 

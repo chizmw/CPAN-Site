@@ -1,7 +1,20 @@
 
 === version history for CPAN::Site
 
-WISH: install by distribution name/version not only package/version
+Wishlist:
+ - install by distribution name/version not only package/version
+   However... it's not the way CPAN works on the moment.
+   See the CPAN6 development at http://cpan6.org
+
+version 0.20: Thu Apr 10 12:13:26 CEST 2008
+	- accept version objects [Alex Efros]
+	- no warning "undef" when archive location is not specified
+	- 01mailrc and 03modlist are updated from the real CPAN, not
+	  just empty.  Motivated by contributions by [Alex Efros]
+	- create directory trees when missing.  Only the top-level
+	  must exist, to protect against errors.
+	- Makefile.PL query about role not used [Alex Efros]
+	- "Cpansite for the impatient" documentation by [Ales Efros]
 
 version 0.19: Fri Mar 21 08:13:19 CET 2008
 	- fix in distname [Matisse Enzer]

@@ -1,4 +1,4 @@
-# Copyrights 1998,2005-2008.
+# Copyrights 1998,2005-2008 by Mark Overmeer.
 #  For other contributors see ChangeLog.
 # See the manual pages for details on the licensing terms.
 # Pod stripped from pm file by OODoc 1.04.
@@ -8,7 +8,7 @@ use strict;
 
 package CPAN::Site;
 use vars '$VERSION';
-$VERSION = '0.19';
+$VERSION = '0.20';
 use base 'CPAN';
 
 my $reload_orig;
@@ -49,15 +49,11 @@ sub CPAN::Index::reload {
 
    $last_time = $time;
 
-   $reload_orig->(@_);
+#  $reload_orig->(@_);
 
-   $cl->rd_authindex($cl->reload_x("site/01mailrc.txt.gz", '', $force));
-   $cl->rd_modpacks(
-     $cl->reload_x("site/02packages.details.txt.gz", '', $force));
-   $cl->rd_modlist($cl->reload_x("site/03modlist.data.gz", '', $force));
-
-   # CPAN Master overwrites?
-   $reload_orig->(@_);
+   $cl->rd_authindex($cl->reload_x("authors/01mailrc.txt.gz", '', $force));
+   $cl->rd_modpacks($cl->reload_x("site/02packages.details.txt.gz",'',$force));
+   $cl->rd_modlist($cl->reload_x("modules/03modlist.data.gz", '', $force));
 }
 
 1;

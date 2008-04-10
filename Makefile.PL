@@ -7,7 +7,7 @@ use ExtUtils::MakeMaker;
 my $role = $ENV{CPANSITE_ROLE};
 unless(defined $role)
 {   print "Set environment variable CPANSITE_ROLE to avoid this question.\n";
-    prompt "Running client or server?", 'client';
+    $role = prompt "Running client or server?", 'client';
 }
 
 my @prereq =
@@ -25,13 +25,14 @@ push @prereq,
 WriteMakefile
  ( NAME       => 'CPAN::Site'
  , ABSTRACT   => 'adding site local modules'
- , VERSION    => '0.19'
+ , VERSION    => '0.20'
 
  , EXE_FILES  =>
     [ 'bin/mkpackages'
     , 'bin/cpansite'
     ]
 
+ , AUTHOR     => 'Mark Overmeer'
  , PREREQ_PM  => { @prereq }
  , LICENSE    => 'perl'
  );

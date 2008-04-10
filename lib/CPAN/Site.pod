@@ -22,14 +22,57 @@ interface. The general idea is to have a local (pseudo) CPAN server which
 is asked first. If the request fails -which is the usual case-, CPAN.pm
 switches to the next URL in the list pointing to a real CPAN server.
 
+=head1 DETAILS
+
+=head2 QUICK SETUP EXAMPLE FOR IMPATIENT
+
+This explanation was contributed by Alex Efros.  There is also an
+explanation in the manual page of the cpansite script.
+
+Let's say your (registered or un-registered) Pause-ID is IMPATIENT, :)
+and you have private module in file Private-Module-1.23.tar.gz. You wish
+to make it available from your own CPAN mirror (actually it's better to
+call it "overlay" instead) on website http://impatient.net/ located in
+directory /var/www/impatient.net/.
+
+=head3 Configuring the server
+
+ # cpan CPAN::Site
+ # mkdir -p /var/www/impatient.net/CPAN/authors/id/I/IM/IMPATIENT/
+ # cp Private-Module-1.23.tar.gz \
+        /var/www/impatient.net/CPAN/authors/id/I/IM/IMPATIENT/
+ # cpansite -vl index /var/www/impatient.net/CPAN/
+
+This nested C</I/IM/IMPATIENT/> structure is CPAN's way of avoiding
+huge directories.  Your mirror only requires one level.
+
+You may also wish to add C<cpansite index> to cron and have it run every
+hour or so.  This way you can just copy new modules to
+F</var/www/impatient.net/CPAN/authors/id/I/IM/IMPATIENT/>
+and they become automatically available on your CPAN mirror after a while.
+To do this you should run C<crontab -e> and add single line like this:
+
+ 0 * * * *   cpansite -l index /var/www/impatient.net/CPAN/ &>/dev/null
+
+=head3 Configuring the clients
+
+ # cpan CPAN::Site
+ # cpansite
+ cpan> o conf urllist unshift http://impatient.net/CPAN/
+ cpan> o conf commit
+
+Now clients should C<cpansite> command instead of C<cpan> to
+search, install or update modules. The C<cpan> command will use the
+real CPAN's indexes.
+
 =head1 SEE ALSO
 
-This module is part of CPAN-Site distribution version 0.19,
-built on March 21, 2008. Website: F<http://perl.overmeer.net/cpan-site/>
+This module is part of CPAN-Site distribution version 0.20,
+built on April 10, 2008. Website: F<http://perl.overmeer.net/cpan-site/>
 
 =head1 LICENSE
 
-Copyrights 1998,2005-2008. For other contributors see ChangeLog.
+Copyrights 1998,2005-2008 by Mark Overmeer. For other contributors see ChangeLog.
 
 This program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.
