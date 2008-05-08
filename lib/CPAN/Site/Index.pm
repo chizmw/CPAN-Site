@@ -8,7 +8,8 @@ use strict;
 
 package CPAN::Site::Index;
 use vars '$VERSION';
-$VERSION = '0.20';
+$VERSION = '0.21';
+
 use base 'Exporter';
 our @EXPORT_OK = qw/cpan_index/;
 our $VERSION;  # required in test-env

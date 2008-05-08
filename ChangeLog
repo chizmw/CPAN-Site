@@ -6,6 +6,15 @@ Wishlist:
    However... it's not the way CPAN works on the moment.
    See the CPAN6 development at http://cpan6.org
 
+- download 01mailrc and 03modlist first under temp name, and then
+  rename, to avoid wrong files being delivered to end-users.
+
+version 0.21: Thu May  8 13:15:22 CEST 2008
+
+	Fixes:
+	- use CPAN::HandleConfig if available.
+	  rt.cpan.org#34869 [Alexander Kühne]
+
 version 0.20: Thu Apr 10 12:13:26 CEST 2008
 	- accept version objects [Alex Efros]
 	- no warning "undef" when archive location is not specified
