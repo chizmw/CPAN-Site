@@ -9,6 +9,16 @@ Wishlist:
 - download 01mailrc and 03modlist first under temp name, and then
   rename, to avoid wrong files being delivered to end-users.
 
+version 0.22: Mon Dec 22 15:26:11 CET 2008
+
+	Fixes:
+	- pre-req version.pm [Sander Hulst]
+
+	Improvements:
+	- regression test by [Matisse Enzer]
+	- packages without version are enlisted [Matisse Enzer]
+	- without version, then enlisted as undef
+
 version 0.21: Thu May  8 13:15:22 CEST 2008
 
 	Fixes:

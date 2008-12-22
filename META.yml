@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                CPAN-Site
-version:             0.21
+version:             0.22
 abstract:            adding site local modules
 license:             perl
 author:              
@@ -10,6 +10,7 @@ distribution_type:   module
 requires:     
     Test::More:                    0.5
     Test::Pod:                     1
+    version:                       0.76
 meta-spec:
     url:     http://module-build.sourceforge.net/META-spec-v1.3.html
     version: 1.3
