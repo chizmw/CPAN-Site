@@ -67,8 +67,8 @@ real CPAN's indexes.
 
 =head1 SEE ALSO
 
-This module is part of CPAN-Site distribution version 0.22,
-built on December 22, 2008. Website: F<http://perl.overmeer.net/cpan-site/>
+This module is part of CPAN-Site distribution version 0.23,
+built on December 23, 2008. Website: F<http://perl.overmeer.net/cpan-site/>
 
 =head1 LICENSE
 

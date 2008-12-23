@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                CPAN-Site
-version:             0.22
+version:             0.23
 abstract:            adding site local modules
 license:             perl
 author:              
@@ -8,7 +8,7 @@ author:
 generated_by:        ExtUtils::MakeMaker version 6.42
 distribution_type:   module
 requires:     
-    Test::More:                    0.5
+    Test::More:                    0.82
     Test::Pod:                     1
     version:                       0.76
 meta-spec:

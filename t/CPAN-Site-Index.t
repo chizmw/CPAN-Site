@@ -3,7 +3,6 @@ use warnings;
 use strict;
 
 # CPAN-Site-Index.t - unit tests for CPAN::Site::Index
-#
 #-------------------------------------------------------------------------------
 use strict;
 use warnings;
