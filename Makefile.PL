@@ -26,7 +26,7 @@ push @prereq,
 WriteMakefile
  ( NAME       => 'CPAN::Site'
  , ABSTRACT   => 'adding site local modules'
- , VERSION    => '0.23'
+ , VERSION    => '0.24'
 
  , EXE_FILES  =>
     [ 'bin/mkpackages'

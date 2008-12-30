@@ -9,10 +9,19 @@ Wishlist:
 - download 01mailrc and 03modlist first under temp name, and then
   rename, to avoid wrong files being delivered to end-users.
 
+version 0.24: Tue Dec 30 11:36:39 CET 2008
+
+	Fixes:
+	- do only include package names found on usual locations.
+	  rt.cpan.org#41935 [Matisse Enzer]
+
+	Improvements:
+	- speed-up
+
 version 0.23: Tue Dec 23 13:30:25 CET 2008
 
 	Fixes:
-	-tests require Test::More 0.82 [cpantesters]
+	- tests require Test::More 0.82 [cpantesters]
 
 version 0.22: Mon Dec 22 15:26:11 CET 2008
 
