@@ -1,4 +1,4 @@
-# Copyrights 1998,2005-2008 by Mark Overmeer.
+# Copyrights 1998,2005-2009 by Mark Overmeer.
 #  For other contributors see ChangeLog.
 # See the manual pages for details on the licensing terms.
 # Pod stripped from pm file by OODoc 1.05.
@@ -8,7 +8,7 @@ use strict;
 
 package CPAN::Site;
 use vars '$VERSION';
-$VERSION = '0.24';
+$VERSION = '0.25';
 
 use base 'CPAN';
 

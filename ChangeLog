@@ -9,6 +9,15 @@ Wishlist:
 - download 01mailrc and 03modlist first under temp name, and then
   rename, to avoid wrong files being delivered to end-users.
 
+version 0.25: Wed Jan 21 09:59:41 CET 2009
+
+	Fixes:
+	- also client requires HTTP::Date
+
+	Improvements:
+	- regressions tests for fix implemented in previous release.
+	  [Matisse Enzer]
+
 version 0.24: Tue Dec 30 11:36:39 CET 2008
 
 	Fixes:

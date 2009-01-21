@@ -11,22 +11,22 @@ unless(defined $role)
 }
 
 my @prereq =
- ( Test::More        => 0.82
- , Test::Pod         => 1.00
- , version           => 0.76
+ ( Test::More      => 0.82
+ , Test::Pod       => 1.00
+ , version         => 0.76
+ , HTTP::Date      => 0
  );
 
 push @prereq,
- ( 'CPAN::Checksums' => 0
- , 'Getopt::Long'    => 0
- , 'HTTP::Date'      => 0
- , 'Net::FTP'        => 0
+ ( CPAN::Checksums => 0
+ , Getopt::Long    => 0
+ , Net::FTP        => 0
  ) if $role =~ m/^s/i;
 
 WriteMakefile
  ( NAME       => 'CPAN::Site'
  , ABSTRACT   => 'adding site local modules'
- , VERSION    => '0.24'
+ , VERSION    => '0.25'
 
  , EXE_FILES  =>
     [ 'bin/mkpackages'

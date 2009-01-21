@@ -9,5 +9,6 @@ lib/CPAN/Site.pod
 lib/CPAN/Site/Index.pm
 t/CPAN-Site-Index.t
 t/pod.t
+t/test_data/Distro-With-Packages-Outside-lib.tar.gz
 t/test_data/Text-PDF-0.29a.tar.gz
 META.yml                                 Module meta-data (added by MakeMaker)
