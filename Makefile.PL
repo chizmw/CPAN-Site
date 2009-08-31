@@ -20,13 +20,13 @@ my @prereq =
 push @prereq,
  ( CPAN::Checksums => 0
  , Getopt::Long    => 0
- , Net::FTP        => 0
+ , LWP             => 0
  ) if $role =~ m/^s/i;
 
 WriteMakefile
  ( NAME       => 'CPAN::Site'
  , ABSTRACT   => 'adding site local modules'
- , VERSION    => '0.25'
+ , VERSION    => '0.26'
 
  , EXE_FILES  =>
     [ 'bin/mkpackages'

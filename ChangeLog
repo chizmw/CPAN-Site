@@ -9,6 +9,16 @@ Wishlist:
 - download 01mailrc and 03modlist first under temp name, and then
   rename, to avoid wrong files being delivered to end-users.
 
+version 0.26: Mon Aug 31 09:51:55 CEST 2009
+
+	Fixes:
+	- do not use /bin/pwd in t/pod.t
+	- accept http to retrieve data from central CPAN as alternative
+          to ftp, by using LWP in stead of Net::FTP
+
+	Improvements
+	- clean-up/extend manual of CPAN::Site
+
 version 0.25: Wed Jan 21 09:59:41 CET 2009
 
 	Fixes:

@@ -4,8 +4,6 @@ use warnings;
 
 use File::Basename  qw/basename/;
 use Getopt::Long    qw/GetOptions :config gnu_getopt/;
-Getopt::Long::Configure 'bundling';
-
 use CPAN::Site      qw/shell install/;
 
 use constant CPAN_CORE => 'ftp://ftp.cpan.org/pub/CPAN';
@@ -18,15 +16,15 @@ my $lazy        = 0;
 my $verbose     = 0;
 my $bigcpan_url;
 
-GetOptions 'cpan=s'     => \$bigcpan_url
-         , 'lazy|l!'    => \$lazy
-         , 'verbose|v+' => \$verbose
-   or exit 1;
+GetOptions
+    'cpan=s'     => \$bigcpan_url
+  , 'lazy|l!'    => \$lazy
+  , 'verbose|v+' => \$verbose
+    or exit 1;
 
-my $debug   = $verbose > 1;
-my $action  = shift || 'shell';
-
-defined $bigcpan_url or $bigcpan_url = CPAN_CORE;
+my $debug       = $verbose > 1;
+my $action      = shift || 'shell';
+$bigcpan_url || = CPAN_CORE;
 
 if($action eq 'index')
 {   my $mycpan = @ARGV ? shift @ARGV : $ENV{CPANSITE};
@@ -89,10 +87,10 @@ cpansite -- extend CPAN with private packages
 =head1 DESCRIPTION
 
 The C<cpansite> script (old name C<mkpackages>) can be used
-(on the server) to create the required extended CPAN index, and
+(on the server) to create the required extended CPAN index and
 (on the clients) to install those modules.  Before it can be used,
-you need some minor configuring, explained in the L</DETAILS> head1,
-below in this manual page.
+you need to do some minor configuring, explained in the L</DETAILS>
+chapter, below in this manual page.
 
 Without any arguments, a CPAN install B<shell> is started.  Besides,
 an abbreviation for B<install> is available.  Other uses for the

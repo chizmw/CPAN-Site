@@ -1,16 +1,17 @@
 # Copyrights 1998,2005-2009 by Mark Overmeer.
 #  For other contributors see ChangeLog.
 # See the manual pages for details on the licensing terms.
-# Pod stripped from pm file by OODoc 1.05.
+# Pod stripped from pm file by OODoc 1.06.
 
 use warnings;
 use strict;
 
 package CPAN::Site::Index;
 use vars '$VERSION';
-$VERSION = '0.25';
+$VERSION = '0.26';
 
 use base 'Exporter';
+
 our @EXPORT_OK = qw/cpan_index/;
 our $VERSION;  # required in test-env
 
@@ -22,6 +23,7 @@ use File::Basename  qw/basename dirname/;
 use Net::FTP        ();
 use HTTP::Date      qw/time2str/;
 use File::Spec      ();
+use LWP::UserAgent  ();
 
 my $tar_gz      = qr/ \.tar \.(gz|Z) $/x;
 my $gzip_read   = 'gzip -cd';
@@ -30,6 +32,7 @@ my $cpan_update = 1.0; #days between reload of full CPAN index
 
 my $verbose;
 my $debug;
+my $ua;
 
 sub package_inventory($$);
 sub create_details($$$$);
@@ -57,8 +60,8 @@ sub cpan_index($@)
     $VERSION      ||= 'undef';   # test env at home
     print "$program version $VERSION\n" if $verbose;
 
-    my $details    = "$mycpan/site/02packages.details.txt.gz";
-    my $newlist    = "$mycpan/site/02packages.details.tmp.gz";
+    my $details     = "$mycpan/site/02packages.details.txt.gz";
+    my $newlist     = "$mycpan/site/02packages.details.tmp.gz";
 
     # Create packages.details
 
@@ -78,7 +81,7 @@ sub cpan_index($@)
     if(-f $details)
     {   print "backup old details to $details.bak\n" if $verbose;
         copy $details, "$details.bak"
-           or die "ERROR: cannot rename '$details' in '$details.bak': $!\n";
+            or die "ERROR: cannot rename '$details' in '$details.bak': $!\n";
     }
 
     if(-f $newlist)
@@ -114,16 +117,16 @@ sub package_inventory($$)
 }
 
 sub register($$$)
-{  my ($package, $version, $dist) = @_;
+{  my ($package, $this_version, $dist) = @_;
    warn "reg(@_)\n" if $debug;
 
    my $registered_version = $findpkgs->{$package}[0];
    return if defined $registered_version
-          && defined $version
-          && qv($registered_version) > qv($version);
+          && defined $this_version
+          && qv($registered_version) > qv($this_version);
 
-   $version =~ s/^v// if defined $version;
-   $findpkgs->{$package} = [ $version, $dist ];
+   $this_version =~ s/^v// if defined $this_version;
+   $findpkgs->{$package} = [ $this_version, $dist ];
 }
 
 sub package_on_usual_location($)
@@ -353,44 +356,22 @@ sub collect_dists($$@)
 sub update_core_cpan($@)
 {  my ($archive, @files) = @_;
 
-   if($archive !~ m[^ftp://([^/]+)(/.*)])
-   {   warn "WARNING: illegal ftp address for CPAN: $archive\n";
-       return;
-   }
-   my ($host, $path) = ($1, $2);
-
-   my $ftp = Net::FTP->new($host, Debug => 0);
-   unless($ftp)
-   {  warn "WARNING: cannot connect to $host: $@";
-      return;
-   }
-
-   unless($ftp->login("anonymous",'-anonymous@'))
-   {  warn "WARNING: cannot login on $host: ", $ftp->message;
-      return;
-   }
-
-   unless($ftp->cwd($path))
-   {  warn "WARNING: directory $path on $host: ", $ftp->message;
-      return;
-   }
-
-   $ftp->binary;
+   $ua ||= LWP::UserAgent->new;
+   $ua->protocols_allowed( [ qw/ftp http/ ] );
 
    foreach my $destfile (@files)
    {   print "getting update of $destfile from $archive\n" if $verbose;
+       my $fn       = basename $destfile;
+       my $group    = basename dirname $destfile;
+       my $source   = "$archive/$group/$fn";
 
-       my $fn    = basename $destfile;
-       my $group = basename dirname $destfile;
-
-       unless($ftp->get("$group/$fn", $destfile))
-       {   my $full = "ftp://$host$path/$group/$fn";
-           warn "WARNING: get of $full failed ", $ftp->message;
-           return;
+       my $response = $ua->get($source, ':content_file' => $destfile);
+       unless($response->is_success)
+       {   unlink $destfile;
+           die "failed to get $source for $destfile: ", $response->status_line,
+"\n";
        }
    }
-
-   $ftp->close;
 }
 
 sub mkdirhier(@)
