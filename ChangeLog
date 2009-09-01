@@ -9,6 +9,26 @@ Wishlist:
 - download 01mailrc and 03modlist first under temp name, and then
   rename, to avoid wrong files being delivered to end-users.
 
+version 1.00: Tue Sep  1 10:48:02 CEST 2009
+	Large version number jump to indicate structural rewrite
+	of internals.  This may trigger someones awareness to be
+	more careful in the upgrade.
+
+	Changes:
+	- removed mkpackages which was kept for backward compatibility
+	- do not extract readme's anymore, probably no-one uses them
+
+	Improvements:
+	- use Archive::Tar to unpack archives, to replace the tricky (but
+	  fast) scanning of the tar binary.
+	- replace use of external 'gzip' binary to IO::Compress
+	- use File::Spec in stead of UNIX syntax. The module is probably
+	  still not usable on Windows, but coming close.
+	- use Log::Report for error/trace/verbose
+	- rename t/CPAN-Site-Index.t into t/10index.t
+	- improved trace on index
+	- new 'mirror' option of cpansite
+
 version 0.26: Mon Aug 31 09:51:55 CEST 2009
 
 	Fixes:

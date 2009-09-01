@@ -2,13 +2,12 @@
 #  For other contributors see ChangeLog.
 # See the manual pages for details on the licensing terms.
 # Pod stripped from pm file by OODoc 1.06.
-
 use warnings;
 use strict;
 
 package CPAN::Site;
 use vars '$VERSION';
-$VERSION = '0.26';
+$VERSION = '1.00';
 
 use base 'CPAN';
 
@@ -54,8 +53,7 @@ sub CPAN::Index::reload {
 
    $last_time = $time;
 
-#  $reload_orig->(@_);
-
+   $reload_orig->(@_);
    $cl->rd_authindex($cl->reload_x("authors/01mailrc.txt.gz", '', $force));
    $cl->rd_modpacks($cl->reload_x("site/02packages.details.txt.gz",'',$force));
    $cl->rd_modlist($cl->reload_x("modules/03modlist.data.gz", '', $force));

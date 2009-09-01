@@ -6,47 +6,34 @@ use File::Basename  qw/basename/;
 use Getopt::Long    qw/GetOptions :config gnu_getopt/;
 use CPAN::Site      qw/shell install/;
 
-use constant CPAN_CORE => 'ftp://ftp.cpan.org/pub/CPAN';
+# the server will redirect you to a mirror
+use constant
+    CPAN_CORE => 'ftp://ftp.cpan.org/pub/CPAN';
 
 #
 # Collect options
 #
 
-my $lazy        = 0;
-my $verbose     = 0;
+my $lazy;
+my $mode;
 my $bigcpan_url;
+my $mycpan       = $ENV{CPANSITE};
 
 GetOptions
     'cpan=s'     => \$bigcpan_url
   , 'lazy|l!'    => \$lazy
-  , 'verbose|v+' => \$verbose
+  , 'verbose|v+' => \$mode
+  , 'mode|m=s'   => \$mode
+  , 'site|s=s'   => \$mycpan
     or exit 1;
 
-my $debug       = $verbose > 1;
-my $action      = shift || 'shell';
-$bigcpan_url || = CPAN_CORE;
+defined $lazy or $lazy = 1;
 
-if($action eq 'index')
-{   my $mycpan = @ARGV ? shift @ARGV : $ENV{CPANSITE};
+my $action   = (shift @ARGV) || 'shell';
+defined $bigcpan_url
+   or $bigcpan_url = CPAN_CORE;
 
-    die "ERROR: specify top-directory of your archive as argument\n"
-        unless $mycpan;
-
-    $mycpan    =~ s!^file:(?://)?!!;
-
-    die "ERROR: directory '$mycpan' does not exist\n"
-        unless -e $mycpan;
-
-    eval "require CPAN::Site::Index";
-    $@ and die "Indexing cannot be done: $@\n";
-
-    CPAN::Site::Index::cpan_index
-     ( $mycpan, lazy => $lazy
-     , verbose => $verbose, debug => $debug
-     , bigcpan_url => $bigcpan_url
-     );
-}
-elsif($action eq 'shell')
+if($action eq 'shell')
 {   my $version = $CPAN::Site::VERSION || 0;
     print "Entering CPAN::Site $version interactive shell\n";
     shell();
@@ -58,8 +45,36 @@ elsif($action =~ m/^\s*install\b/ )   # CPAN.pm compatible
 {   ($action, my @args) = split " ", $action;
     install(@args);
 }
-else
+elsif($action ne 'index' && $action ne 'mirror')
 {   die "ERROR: action '$action' is not in use.\n";
+}
+
+elsif($action eq 'index')
+{   $mycpan = shift @ARGV if @ARGV;
+    $mycpan
+        or die "ERROR: specify top-directory of your archive as argument\n";
+
+    $mycpan    =~ s!^file:(?://)?!!;
+    -d $mycpan
+        or die "ERROR: directory '$mycpan' does not exist\n";
+
+    eval "require CPAN::Site::Index";
+    $@ and die "Indexing cannot be done: $@\n";
+
+    CPAN::Site::Index::cpan_index
+       ($mycpan, $bigcpan_url, lazy => $lazy, mode => $mode);
+}
+elsif($action eq 'mirror')
+{   $mycpan
+        or die "ERROR: set CPANSITE in environment or use --site option\n";
+
+    @ARGV
+        or die "ERROR: list of module names expected\n";
+
+    eval "require CPAN::Site::Index";
+    $@ and die "Problems with the index: $@\n";
+
+    CPAN::Site::Index::mirror($mycpan, $bigcpan_url, \@ARGV, mode => $mode);
 }
 
 exit 0;
@@ -76,21 +91,17 @@ cpansite -- extend CPAN with private packages
  cpansite [OPTIONS] install PACKAGE
  cpansite [OPTIONS] [shell]
 
-  General options:
-    --verbose  -v     be verbose
-               -vv    debug output
-
   Indexing options:
-    --lazy     -l     try to avoid redo-ing everything
+    --verbose  -v -vv -vvv --mode=DEBUG
+    --no-lazy         redo everything
     --cpan <url>      some CPAN mirror
 
 =head1 DESCRIPTION
 
-The C<cpansite> script (old name C<mkpackages>) can be used
-(on the server) to create the required extended CPAN index and
-(on the clients) to install those modules.  Before it can be used,
-you need to do some minor configuring, explained in the L</DETAILS>
-chapter, below in this manual page.
+The C<cpansite> script can be used (on the server) to create the required
+extended CPAN index and (on the clients) to install those modules.
+Before it can be used, you need to do some minor configuring, explained
+in the L</DETAILS> chapter, below in this manual page.
 
 Without any arguments, a CPAN install B<shell> is started.  Besides,
 an abbreviation for B<install> is available.  Other uses for the
@@ -106,17 +117,6 @@ first.
 The following options are available in all modes:
 
 =over 4
-
-=item --verbose  or -v
-
-Produce verbose output, just enough to follow what is happening globally.
-There will not be a flood of distribution names or packages, only
-processing steps.
-
-=item -vv
-
-Produce a detailed trace, including decissions why some packages are
-picked or not, and where distributions are considered to be new or not.
 
 =item $CPANSITE
 
@@ -143,11 +143,17 @@ Additional options for "index" mode:
 
 =over 4
 
-=item --lazy or -l
+=item --verbose -v -vv -vvv --mode=DEBUG
 
-Try to avoid redo-ing everything: without this flag, all distributions on
-the local disk are processed and a new table is created.  With this flag,
-the process tries to handle only new distributions.
+Produce verbose output.
+
+=item --no-lazy --lazy -l
+
+Try to avoid redo-ing everything.  By default, the indexer is
+lazy: it will process only new distributions.  When not lazy, all
+distributions on the local disk are processed and a new table is
+created.  The default of this option reversed with release 1.00 of
+C<CPAN::Site>.
 
 =item --cpan <url>
 
@@ -246,7 +252,7 @@ missing checksums on files retreived for the public archive.
 
   mkdir -p $MYCPAN/authors/id/M/MY/MYID
   mv MyDist-1.00-tar.gz $MYCPAN/authors/id/M/MY/MYID
-  cpansite -v -l index $MYCPAN
+  cpansite -v index $MYCPAN
 
 Although CPAN.pm claims to support a directory format of
 C<$MYCPAN/authors/id/MYID>, experience shows that this does not

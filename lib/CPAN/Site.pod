@@ -77,8 +77,8 @@ file to other systems where you wish to have the same configuration.
 
 =head1 SEE ALSO
 
-This module is part of CPAN-Site distribution version 0.26,
-built on August 31, 2009. Website: F<http://perl.overmeer.net/cpan-site/>
+This module is part of CPAN-Site distribution version 1.00,
+built on September 01, 2009. Website: F<http://perl.overmeer.net/cpan-site/>
 
 =head1 LICENSE
 
