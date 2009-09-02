@@ -7,27 +7,18 @@ use strict;
 use strict;
 use warnings;
 use FindBin qw($Bin);
-use Test::More;
+use Test::More tests => 53;
 
-BEGIN {
-    eval "require CPAN::Site::Index";
-    if(!$@) { plan tests => 52 }
-    elsif($ENV{CPANSITE_ROLE} eq 'server')
-    {   die $@;
-    }
-    else
-    {   plan skip_all => 'cannot use indexer';
-    }
-}
+use_ok('CPAN::Site::Index');
 
-test_inspect_entry_for_distro_with_strange_data();
-test_inspect_entry_for_distro_with_packages_that_should_not_be_registered();
+test_inspect_archive_for_distro_with_strange_data();
+test_inspect_archive_for_distro_with_packages_that_should_not_be_registered();
 
 exit;
 
 #-------------------------------------------------------------------------------
 
-sub test_inspect_entry_for_distro_with_strange_data {
+sub test_inspect_archive_for_distro_with_strange_data {
     my $distro_to_test = 'Text-PDF-0.29a.tar.gz';
     my %want_packages  = (
         'Text::PDF::Array'           => undef,
@@ -54,35 +45,35 @@ sub test_inspect_entry_for_distro_with_strange_data {
         'Text::PDF::Utils'           => undef,
         'Text::PDF'                  => '0.29',
     );
-    _test_inspect_entry_for_distro( $distro_to_test, \%want_packages );
+    _test_inspect_archive_for_distro( $distro_to_test, \%want_packages );
 }
 
-sub test_inspect_entry_for_distro_with_packages_that_should_not_be_registered {
+sub test_inspect_archive_for_distro_with_packages_that_should_not_be_registered {
     my $distro_to_test = 'Distro-With-Packages-Outside-lib.tar.gz';
     my %want_packages  = (
         'TopOfDistro' => '0.01',
         'InsideLib'   => '0.01',
     );
-    _test_inspect_entry_for_distro( $distro_to_test, \%want_packages );
+    _test_inspect_archive_for_distro( $distro_to_test, \%want_packages );
 }
 
-sub _test_inspect_entry_for_distro {
+sub _test_inspect_archive_for_distro {
     my $distro        = shift;
     my $want_packages = shift;
 
-    # inspect_entry() relies upon a global variable $topdir which
+    # inspect_archive() relies upon a global variable $topdir which
     # we is declared with 'our' in Index.pm so we can set it here for testing.
     $CPAN::Site::Index::topdir = "$Bin/test_data";
 
-    # inspect_entry is called in Index.pm using File::Find
-    #   find { wanted => \&inspect_entry, no_chdir => 1 }, $topdir;
+    # inspect_archive is called in Index.pm using File::Find
+    #   find { wanted => \&inspect_archive, no_chdir => 1 }, $topdir;
     # so we set two variables that File::Find normally sets:
     $File::Find::name = "$CPAN::Site::Index::topdir/$distro";
     $File::Find::dir  = $CPAN::Site::Index::topdir;
     note("Checking $File::Find::name in $File::Find::dir");
 
     $CPAN::Site::Index::findpkgs = {};
-    CPAN::Site::Index::inspect_entry();
+    CPAN::Site::Index::inspect_archive();
 
     my @missing_pkgs = ();
     foreach my $want_pkg ( sort keys %{$want_packages} ) {

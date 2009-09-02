@@ -3,13 +3,11 @@ MANIFEST
 Makefile.PL
 README
 bin/cpansite
-bin/mkpackages
+explain_101.txt
 lib/CPAN/Site.pm
-lib/CPAN/Site.pod
 lib/CPAN/Site/Index.pm
 t/10index.t
 t/99pod.t
-t/CPAN-Site-Index.t
 t/test_data/Distro-With-Packages-Outside-lib.tar.gz
 t/test_data/Text-PDF-0.29a.tar.gz
 META.yml                                 Module meta-data (added by MakeMaker)

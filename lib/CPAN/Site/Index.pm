@@ -8,50 +8,57 @@ use strict;
 
 package CPAN::Site::Index;
 use vars '$VERSION';
-$VERSION = '1.00';
+$VERSION = '1.01';
 
 use base 'Exporter';
 
-our @EXPORT_OK = qw/cpan_index/;
+our @EXPORT_OK = qw/cpan_index cpan_mirror/;
 our $VERSION;  # required in test-env
 
 use Log::Report     'cpan-site', syntax => 'SHORT';
 
 use version;
-use IO::File        ();
 use File::Find      qw/find/;
-use File::Copy      qw/copy move/;
+use File::Copy      qw/copy/;
 use File::Basename  qw/basename dirname/;
 use HTTP::Date      qw/time2str/;
 use File::Spec::Functions qw/catfile catdir splitdir/;
 use LWP::UserAgent  ();
 use Archive::Tar    ();
 use CPAN::Checksums ();
-
-use IO::Compress::Gzip     qw/$GzipError/;
-use IO::Uncompress::Gunzip qw/$GunzipError/;
+use IO::Zlib        ();
 
 my $tar_gz      = qr/ \.tar \.(gz|Z) $/x;
-my $cpan_update = 1.0; #days between reload of full CPAN index
-
+my $cpan_update = 0.04; # days between reload of full CPAN index
 my $ua;
 
+sub safe_copy($$);
+sub cpan_index($@);
+sub register($$$);
 sub package_inventory($$);
+sub package_on_usual_location($);
+sub inspect_archive;
+sub collect_package_details($$);
+sub update_global_cpan($$);
+sub load_file($$);
+sub merge_global_cpan($$$);
 sub create_details($$$$);
 sub calculate_checksums($);
-sub collect_dists($$@);
-sub merge_core_cpan($$$);
-sub update_core_cpan($@);
+sub read_details($);
+sub remove_expired_details($$$);
 sub mkdirhier(@);
+sub cpan_mirror($$$@);
+
+sub safe_copy($$)
+{   my ($from, $to) = @_;
+    copy $from, $to
+        or fault __x"cannot copy {from} to {to}", from => $from, to => $to;
+}
 
 sub cpan_index($@)
-{   my ($mycpan, $bigcpan_url, %opts) = @_;
-    my $merge_with_core = length $bigcpan_url;
+{   my ($mycpan, $globalcpan, %opts) = @_;
     my $lazy            = $opts{lazy};
-
-    if(my $mode = $opts{mode})
-    {   dispatcher mode => $mode, 'ALL';
-    }
+    my $fallback        = $opts{fallback};
 
     -d $mycpan
         or error __x"archive top '{dir}' is not a directory"
@@ -61,35 +68,47 @@ sub cpan_index($@)
     $VERSION      ||= 'undef';   # test env at home
     trace "$program version $VERSION";
 
-    my $top         = catdir $mycpan, 'site';
-    my $details     = catfile $top, '02packages.details.txt.gz';
-    my $newlist     = catfile $top, '02packages.details.tmp.gz';
-    mkdirhier $top;
+    my $global      = catdir $mycpan, 'global';
+    my $mods        = catdir $mycpan, 'modules';
+    mkdirhier $global, $mods;
 
-    # Create packages.details
+    my $globdetails = update_global_cpan $mycpan, $globalcpan;
+
+    # Create mailrc and modlist
+
+    safe_copy catfile($global, '01mailrc.txt.gz')
+            , catfile($mycpan, authors => '01mailrc.txt.gz');
+
+    safe_copy catfile($global, '03modlist.data.gz')
+            , catfile($mods, '03modlist.data.gz');
+
+    # Create packages details
+
+    my $details     = catfile $mods, '02packages.details.txt.gz';
+    my $newlist     = catfile $mods, '02packages.details.tmp.gz';
 
     my $reuse_dists = {};
-    $reuse_dists    = collect_dists $details, $mycpan, local => 1
-       if $lazy;
+    if($lazy && -f $details)
+    {   $reuse_dists = read_details $details;
+        my $newer    = -M $details;
+        remove_expired_details $mycpan, $reuse_dists, $newer;
+    }
 
-    my ($mypkgs, $distdirs) = package_inventory $mycpan, $reuse_dists;
+    my ($mypkgs, $distdirs)
+      = package_inventory $mycpan, $reuse_dists;
 
-    merge_core_cpan($mycpan, $mypkgs, $bigcpan_url)
-        if $merge_with_core;
+    merge_global_cpan $mycpan, $mypkgs, $globdetails
+        if $fallback;
 
     create_details $details, $newlist, $mypkgs, $lazy;
 
-    # Install packages.details
-
     if(-f $details)
-    {   trace "backup old details file to $details.bak";
-        copy $details, "$details.bak"
-            or error __x"cannot rename '{from}' in '{to}'"
-                 , from => $details, to => "$details.bak";
+    {   info "backup old details file to $details.bak";
+        safe_copy $details, "$details.bak";
     }
 
     if(-f $newlist)
-    {   trace "promoting $newlist to current";
+    {   info "promoting $newlist to current";
         rename $newlist, $details
             or error __x"cannot rename '{from}' in '{to}'"
                  , from => $newlist, to => $details;
@@ -105,22 +124,12 @@ sub cpan_index($@)
 # global variables for testing purposes (sorry)
 our ($topdir, $findpkgs, %finddirs, $olddists);
 
-sub package_inventory($$)
-{  (my $cpan, $olddists) = @_;
-   $topdir   = catdir $cpan, 'authors', 'id';
-   mkdirhier $topdir;
-
-   $findpkgs = {};
-   trace "creating inventory from $topdir";
-
-   find {wanted => \&inspect_entry, no_chdir => 1}, $topdir;
-   ($findpkgs, \%finddirs);
-}
-
 sub register($$$)
 {  my ($package, $this_version, $dist) = @_;
-   trace "register $package, "
-       . (defined $this_version ? $this_version : 'undef');
+
+# disabled: too verbose, even for for trace
+#  trace "register $package, "
+#      . (defined $this_version ? $this_version : 'undef');
 
    my $registered_version = $findpkgs->{$package}[0];
    return if defined $registered_version
@@ -129,6 +138,18 @@ sub register($$$)
 
    $this_version =~ s/^v// if defined $this_version;
    $findpkgs->{$package} = [ $this_version, $dist ];
+}
+
+sub package_inventory($$)
+{  (my $mycpan, $olddists) = @_;
+   $topdir   = catdir $mycpan, 'authors', 'id';
+   mkdirhier $topdir;
+
+   $findpkgs = {};
+   trace "creating inventory from $topdir";
+
+   find {wanted => \&inspect_archive, no_chdir => 1}, $topdir;
+   ($findpkgs, \%finddirs);
 }
 
 sub package_on_usual_location($)
@@ -140,12 +161,10 @@ sub package_on_usual_location($)
    || $subdir eq 'lib';  # inside lib
 }
 
-sub inspect_entry
+sub inspect_archive
 {   my $fn   = $File::Find::name;
     -f $fn && $fn =~ $tar_gz
         or return;
-
-    trace "inspecting $fn";
 
     (my $dist = $fn) =~ s!^$topdir[\\/]!!;
 
@@ -159,6 +178,7 @@ sub inspect_entry
         return;
     }
 
+    trace "inspecting archive $fn";
     $finddirs{$File::Find::dir}++;
 
     my $arch =  Archive::Tar->new;
@@ -170,57 +190,81 @@ sub inspect_entry
     {   my $fn = $file->name;
         $file->is_file && $fn =~ m/\.pm$/i && package_on_usual_location $fn
             or next;
+        collect_package_details $dist, $file;
+    }
+}
 
-        my @lines  = split /\r?\n/, ${$file->get_content_by_ref};
-        my $in_pod = 0;
-        my ($package, $version);
-        foreach (@lines)
-        {   last if m/^__(?:END|DATA)__$/;
+sub collect_package_details($$)
+{   my ($dist, $file) = @_;
 
-            $in_pod = ($1 ne 'cut') if m/^=(\w+)/;
-            next if $in_pod;
+    my @lines  = split /\r?\n/, ${$file->get_content_by_ref};
+    my $in_pod = 0;
+    my ($package, $version);
 
-            if( m/^\s* package \s* ((?:\w+\:\:)*\w+) \s* ;/x )
-            {   # version may be added later
-                $package = $1;
-                trace "package=$package";
-                register $package, undef, $dist;
-                next;
-            }
+    foreach (@lines)
+    {   last if m/^__(?:END|DATA)__$/;
 
-            if( m/^ (?:use\s+version\s*;\s*)?
-                (?:our)? \s* \$ (?: \w+\:\:)* VERSION \s* \= \s* (.*)/x )
-            {   defined $1 or next;
-                local $VERSION;  # destroyed by eval
-                $version = eval "my \$v = $1";
-                $version = $version->numify if ref $version;
+        $in_pod = ($1 ne 'cut') if m/^=(\w+)/;
+        next if $in_pod;
 
-                trace "version=$version";
+        if( m/^\s* package \s* ((?:\w+\:\:)*\w+) \s* ;/x )
+        {   # version may be added later
+            $package = $1;
+            trace "pkg $package from ".$file->name;
+            register $package, undef, $dist;
+        }
+
+        if( m/^ (?:use\s+version\s*;\s*)?
+            (?:our)? \s* \$ (?: \w+\:\:)* VERSION \s* \= \s* (.*)/x )
+        {   defined $1 or next;
+            local $VERSION;  # destroyed by eval
+            $version = eval "my \$v = $1";
+            $version = $version->numify if ref $version;
+            if(defined $version)
+            {   trace "pkg $package version $version";
                 register $package, $version, $dist;
             }
         }
     }
 }
 
-sub merge_core_cpan($$$)
-{   my ($cpan, $pkgs, $bigcpan_url) = @_;
+sub update_global_cpan($$)
+{   my ($mycpan, $globalcpan) = @_;
 
-    info "merging packages with CPAN core list";
+    my $global = catdir $mycpan, 'global';
+    my ($mailrc, $globdetails, $modlist) = 
+       map { catfile $global, $_ }
+         qw/01mailrc.txt.gz 02packages.details.txt.gz 03modlist.data.gz/;
 
-    my $mailrc     = "$cpan/authors/01mailrc.txt.gz";
-    my $bigdetails = "$cpan/modules/02packages.details.txt.gz";
-    my $modlist    = "$cpan/modules/03modlist.data.gz";
+    return $globdetails
+       if -f $globdetails && -f $globdetails && -f $modlist
+       && -M $globdetails < $cpan_update;
 
-    mkdirhier "$cpan/authors", "$cpan/modules";
+    info "(re)loading global CPAN files";
 
-    update_core_cpan $bigcpan_url, $bigdetails, $modlist, $mailrc
-        if ! -f $bigdetails || -M $bigdetails > $cpan_update;
+    mkdirhier $global;
+    load_file "$globalcpan/authors/01mailrc.txt.gz",   $mailrc;
+    load_file "$globalcpan/modules/02packages.details.txt.gz", $globdetails;
+    load_file "$globalcpan/modules/03modlist.data.gz", $modlist;
+    $globdetails;
+}
 
-    -f $bigdetails
-        or return;
+sub load_file($$)
+{   my ($from, $to) = @_;
+    $ua ||= LWP::UserAgent->new;
+    my $response = $ua->get($from, ':content_file' => $to);
+    return if $response->is_success;
 
-    my $cpan_pkgs = collect_dists $bigdetails, "$cpan/modules"
-      , local => 0;
+    unlink $to;
+    error __x"failed to get {uri} for {to}: {err}"
+      , uri => $from, to => $to, err => $response->status_line;
+}
+
+sub merge_global_cpan($$$)
+{   my ($mycpan, $pkgs, $globdetails) = @_;
+
+    info "merge packages with CPAN core list in $globdetails";
+    my $cpan_pkgs = read_details $globdetails;
 
     while(my ($cpandist, $cpanpkgs) = each %$cpan_pkgs)
     {   foreach (@$cpanpkgs)
@@ -234,16 +278,15 @@ sub merge_core_cpan($$$)
 sub create_details($$$$)
 {  my ($details, $filename, $pkgs, $lazy) = @_;
 
-   trace "creating package details file '$filename'";
-   my $fh = IO::Compress::Gzip->new($filename)
-      or error __x"generating gzipped '{fn}': {err}"
-          , fn => $filename, err => $GzipError;
+   trace "creating package details in $filename";
+   my $fh = IO::Zlib->new($filename, 'wb')
+      or fault __x"generating gzipped {fn}", fn => $filename;
 
    my $lines = keys %$pkgs;
    my $date  = time2str time;
    my $how   = $lazy ? "lazy" : "full";
 
-   info "produced list of $lines packages $how\n";
+   info "produced list of $lines packages $how";
 
    my $program     = basename $0;
    my $module      = __PACKAGE__;
@@ -278,69 +321,51 @@ sub calculate_checksums($)
     }
 }
 
-sub collect_dists($$@)
-{   my ($fn, $base, %opts) = @_;
-    my $check = $opts{local} || 0;
-
-    info "collecting details from $fn".($opts{local} ? ' (local)' : '');
-
+sub read_details($)
+{   my $fn = shift;
     -f $fn or return {};
+    info "collecting all details from $fn";
 
-    my $fh    = IO::Uncompress::Gunzip->new($fn)
-       or error __x"cannot read from '{fn}': {err}"
-           , fn => $fn, err => $GunzipError;
+    my $fh    = IO::Zlib->new($fn, 'rb')
+       or fault __x"cannot read from {fn}", fn => $fn;
 
-    while(my $line = $fh->getline)   # skip header, search first blank
-    {  last if $line =~ m/^\s*$/;
-    }
+    my $line;   # skip header, search first blank
+    do { $line = $fh->getline } until $line =~ m/^\s*$/;
 
     my $time_last_update = (stat $fn)[9];
-    my %olddists;
-    my $authors = "$base/authors/id";
+    my %dists;
 
-  PACKAGE:
     while(my $line = $fh->getline)
-    {   my ($oldpkg, $version, $dist) = split " ", $line;
-
-        if($check)
-        {   -f "$authors/$dist"
-                or next PACKAGE;
-
-            if((stat "$authors/$dist")[9] > $time_last_update )
-            {   trace "newer $dist, so replace $oldpkg\n";
-                next PACKAGE;
-            }
-        }
+    {   chomp $line;
+        my ($pkg, $version, $dist) = split ' ', $line, 3;
 
         unless($dist)
-        {   warning "Error line=$line";
+        {   warning "$fn error line=\n  $line";
             next;
         }
 
-        push @{$olddists{$dist}}, [ $oldpkg, $version ];
+        push @{$dists{$dist}}, [$pkg, $version];
     }
 
-    \%olddists;
+    \%dists;
 }
 
-sub update_core_cpan($@)
-{  my ($archive, @files) = @_;
+sub remove_expired_details($$$)
+{   my ($mycpan, $dists, $newer) = @_;
+    info "extracting only existing local distributions";
 
-   $ua ||= LWP::UserAgent->new;
-
-   foreach my $destfile (@files)
-   {   info "getting update of $destfile from $archive";
-       my $fn       = basename $destfile;
-       my $group    = basename dirname $destfile;
-       my $source   = "$archive/$group/$fn";
-
-       my $response = $ua->get($source, ':content_file' => $destfile);
-       next if $response->is_success;
-
-       unlink $destfile;
-       error __x"failed to get {uri} for {to}: {err}"
-         , uri => $source, to => $destfile, err => $response->status_line;
-   }
+    my $authors = catdir $mycpan, 'authors', 'id';
+    foreach my $dist (keys %$dists)
+    {   my $fn = catfile $authors, $dist;
+        if(! -f $fn)
+        {   # removed local or a global dist
+            delete $dists->{$dist};
+        }
+        elsif(-M $fn < $newer)
+        {   trace "dist $dist file updated, reindexing";
+            delete $dists->{$dist};
+        }
+    }
 }
 
 sub mkdirhier(@)
@@ -356,23 +381,17 @@ sub mkdirhier(@)
     1;
 }
 
-sub mirror($$$@)
-{   my ($mycpan, $bigcpan, $mods, %opts) = @_;
+sub cpan_mirror($$$@)
+{   my ($mycpan, $globalcpan, $mods, %opts) = @_;
     @$mods or return;
-    my %need    = map { ($_ => 1) } @$mods;
+    my %need = map { ($_ => 1) } @$mods;
+    my $auth = catdir $mycpan, 'authors', 'id';
 
-    if(my $mode = $opts{mode})
-    {   dispatcher mode => $mode, 'ALL';
-    }
+    my $globdetails
+             = update_global_cpan $mycpan, $globalcpan;
 
-    $ua       ||= LWP::UserAgent->new;
-
-    my $details = catfile $mycpan, 'modules', '02packages.details.txt.gz';
-    my $auth    = catdir  $mycpan, 'authors', 'id';
-
-    my $fh      = IO::Uncompress::Gunzip->new($details)
-        or error __x"cannot read from '{fn}': {err}"
-             , fn => $details, err => $GunzipError;
+    my $fh   = IO::Zlib->new($globdetails, 'rb')
+        or fault __x"cannot read from {fn}", fn => $globdetails;
 
     while(my $line = $fh->getline)   # skip header, search first blank
     {   last if $line =~ m/^\s*$/;
@@ -389,7 +408,7 @@ sub mirror($$$@)
             next;
         }
 
-        my $source   = "$bigcpan/authors/id/$dist";
+        my $source   = "$globalcpan/authors/id/$dist";
         mkdirhier dirname $to;
         my $response = $ua->get($source, ':content_file' => $to);
         unless($response->is_success)

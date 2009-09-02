@@ -1,13 +1,29 @@
 
 === version history for CPAN::Site
 
-Wishlist:
- - install by distribution name/version not only package/version
-   However... it's not the way CPAN works on the moment.
-   See the CPAN6 development at http://cpan6.org
+   *** See the CPAN6 development at http://cpan6.org
 
-- download 01mailrc and 03modlist first under temp name, and then
-  rename, to avoid wrong files being delivered to end-users.
+version 1.01: Wed Sep  2 12:55:19 CEST 2009
+	Changes:
+	- removed the need for client-side CPAN::Site installation.
+	- update 02packages after 1 hour (was 1 day), because CPAN
+	  is refreshing more often, lately.
+	- removed [MYCPAN] argument to "index", because there is
+	  a --site option now.
+	- CPANSITE_CPAN renamed to CPANSITE_GLOBAL
+	- option --stand-alone replaces --cpan ''
+
+	Fixes:
+	- require Log::Report 0.25, not the non-existent 0.27
+
+	Improvements:
+	- indexer synchronizes with core CPAN after 1 hour (was 1 day)
+	  because CPAN is faster than previously.
+	- CPANSITE_CPAN environment variable as alternative to --site
+	- Replace IO::Compress::* by IO::Zlib, which is already required
+	  by Archive::Tar.
+	- explain changes in explain_101.txt
+	- --cpan option alternative added: -c
 
 version 1.00: Tue Sep  1 10:48:02 CEST 2009
 	Large version number jump to indicate structural rewrite
