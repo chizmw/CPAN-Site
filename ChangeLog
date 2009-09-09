@@ -3,6 +3,17 @@
 
    *** See the CPAN6 development at http://cpan6.org
 
+version 1.02: Wed Sep  9 22:44:46 CEST 2009
+	Fixes:
+	- "version" action did not produce version
+	- "mirror" did not initialize LWP::UserAgent
+	- some modules, like DBI, specify package versions outside
+	  the package scope.
+
+	Improvements:
+	- prefer new CPANSITE_LOCAL as alternative for CPANSITE
+	  environment variable.
+
 version 1.01: Wed Sep  2 12:55:19 CEST 2009
 	Changes:
 	- removed the need for client-side CPAN::Site installation.

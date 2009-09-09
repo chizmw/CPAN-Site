@@ -17,7 +17,7 @@ use constant CPAN_CORE => 'ftp://ftp.cpan.org/pub/CPAN';
 my $lazy;
 my $mode        = 0;
 my $global_cpan = $ENV{CPANSITE_GLOBAL} || CPAN_CORE;
-my $mycpan      = $ENV{CPANSITE};
+my $mycpan      = $ENV{CPANSITE_LOCAL}  || $ENV{CPANSITE};
 my $stand_alone = 0;
 
 GetOptions
@@ -40,7 +40,7 @@ defined $action
          , program => $0;
 
 if($action eq 'version')
-{   print "$CPAN::Site::VERSION\n";
+{   print "$CPAN::Site::Index::VERSION\n";
     exit 0;
 }
 
@@ -59,7 +59,7 @@ if($action eq 'index')
 
 if($action eq 'mirror')
 {   $mycpan
-        or error __x"set CPANSITE in environment or use --site option";
+        or error __x"set CPANSITE_LOCAL in environment or use --site option";
 
     @ARGV
         or error __x"list of module names expected";
@@ -86,7 +86,7 @@ cpansite -- extend CPAN with private packages
     --verbose  -v -vv -vvv --mode=DEBUG
     --no-lazy       redo everything
     --cpan <url>    some CPAN mirror        CPANSITE_GLOBAL
-    --site <dir>    local archive directory CPANSITE
+    --site <dir>    local archive directory CPANSITE_LOCAL
     --stand-alone   no fallback to global CPAN
 
 =head1 DESCRIPTION
@@ -131,15 +131,15 @@ The following options are available with all actions:
 
 Produce verbose output via L<Log::Report>.
 
-=item --site <dir>  or  -s <dir>  or   $CPANSITE
+=item --site <dir>  or  -s <dir>  or   $CPANSITE_LOCAL
 
 The location of your local CPAN archive set-up.
 
 Example:
-  export CPANSITE="/www/websites/cpan.example.com"
+  export CPANSITE_LOCAL="/www/websites/cpan.example.com"
   cpansite index
 
-  cpansite --site $CPANSITE index  # alternative
+  cpansite --site $CPANSITE_LOCAL index  # alternative
 
 =item --cpan <url>  or  -c <url>  or   $CPANSITE_GLOBAL
 
@@ -228,7 +228,7 @@ work correctly with some recursively dependencies.
 Put your own modules in C<$MYMODS> and then rerun the indexer.
 
   mv MyDist-1.00-tar.gz $MYMODS   # local
-  scp MyDist-1.00-tar.gz $CPANSITE:$MYMODS
+  scp MyDist-1.00-tar.gz cpan.example.com:$MYMODS
 
 =head3 Generating an index with fallback
 
@@ -247,7 +247,7 @@ version number.
 With fallback:
 
  cpansite --site $MYCPAN index
- cpansite index    # when   CPANSITE=$MYCPAN
+ cpansite index    # when   CPANSITE_LOCAL=$MYCPAN
 
 The script traverses I<$MYCPAN>F</authors/id> and merges this with the
 I<$MYCPAN>F</global/02packages.details.txt.gz> data, a copy from the
@@ -268,7 +268,7 @@ to the global CPAN.
 Without fallback:
 
  cpansite --site $MYCPAN --stand-alone index
- cpansite --stand-alone index    # when   CPANSITE=$MYCPAN
+ cpansite --stand-alone index    # when   CPANSITE_LOCAL=$MYCPAN
 
 The index is now very small.  But when you start installing your software
 on systems, it will start complaining that the module cannot be found on
@@ -287,7 +287,7 @@ your local CPAN archive.
 
  cpansite --site $MYCPAN --cpan $GLOBAL mirror Mail::Box Test::More
 
- # when CPANSITE=$MYCPAN and CPANSITE_GLOBAL=$GLOBAL
+ # when CPANSITE_LOCAL=$MYCPAN and CPANSITE_GLOBAL=$GLOBAL
  cpansite mirror Mail::Box Test::More
 
 =head1 AUTHORS
