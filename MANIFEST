@@ -7,6 +7,7 @@ explain_101.txt
 lib/CPAN/Site.pm
 lib/CPAN/Site/Index.pm
 t/10index.t
+t/20qv.t
 t/99pod.t
 t/test_data/Distro-With-Packages-Outside-lib.tar.gz
 t/test_data/Text-PDF-0.29a.tar.gz

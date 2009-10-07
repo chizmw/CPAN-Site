@@ -31,7 +31,7 @@ my @prereq =
 WriteMakefile
  ( NAME       => 'CPAN::Site'
  , ABSTRACT   => 'adding site local modules'
- , VERSION    => '1.02'
+ , VERSION    => '1.03'
 
  , EXE_FILES  => [ 'bin/cpansite' ]
 

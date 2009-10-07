@@ -1,9 +1,7 @@
-#!/usr/bin/perl
-use warnings;
-use strict;
-
+#!/usr/bin/env perl
 # CPAN-Site-Index.t - unit tests for CPAN::Site::Index
 #-------------------------------------------------------------------------------
+$^W = 0;
 use strict;
 use warnings;
 use FindBin qw($Bin);

@@ -3,6 +3,14 @@
 
    *** See the CPAN6 development at http://cpan6.org
 
+version 1.03: Wed Oct  7 19:46:57 CEST 2009
+	Fixes:
+	- use $file->full_path i.s.o $file->name for files in a tar,
+	  required to correctly access some tar archives.
+	  rt.cpan.org#49795 [Matisse Enzer] and [Alex Efros]
+	- accept archives which end on .tgz
+	- keep highest version number of a pm, not the last [Alex Efros]
+
 version 1.02: Wed Sep  9 22:44:46 CEST 2009
 	Fixes:
 	- "version" action did not produce version
