@@ -4,8 +4,8 @@ use ExtUtils::MakeMaker;
 # someone runs the script as client, it will get a problem with
 # missing "CPAN::Checksums", which is not a problem.
 
-my $role = $ENV{CPANSITE_ROLE};
-if(defined $role)
+eval "require CPAN::Site";
+if(!$@ && $CPAN::Site::VERSION <= 1.01 && !$ENV{MARKOV_DEVEL})
 {   warn <<__WARN;
 
 *** the interface of CPAN::Site has changed a lot with release 1.01
@@ -31,7 +31,7 @@ my @prereq =
 WriteMakefile
  ( NAME       => 'CPAN::Site'
  , ABSTRACT   => 'adding site local modules'
- , VERSION    => '1.03'
+ , VERSION    => '1.04'
 
  , EXE_FILES  => [ 'bin/cpansite' ]
 

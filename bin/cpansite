@@ -19,6 +19,7 @@ my $mode        = 0;
 my $global_cpan = $ENV{CPANSITE_GLOBAL} || CPAN_CORE;
 my $mycpan      = $ENV{CPANSITE_LOCAL}  || $ENV{CPANSITE};
 my $stand_alone = 0;
+my $undefs      = 1;
 
 GetOptions
     'cpan|c=s'   => \$global_cpan
@@ -27,6 +28,7 @@ GetOptions
   , 'mode|m=s'   => \$mode
   , 'site|s=s'   => \$mycpan
   , 'stand-alone|a!' => \$stand_alone
+  , 'undefs|u!'  => \$undefs
     or exit 1;
 
 defined $lazy or $lazy = 1;
@@ -53,7 +55,10 @@ if($action eq 'index')
     -d $mycpan
         or fault __x"archive directory '{dir}'", dir => $mycpan;
 
-    cpan_index $mycpan, $global_cpan, lazy => $lazy, fallback => !$stand_alone;
+    cpan_index $mycpan, $global_cpan
+      , lazy     => $lazy
+      , fallback => !$stand_alone
+      , undefs   => $undefs;
     exit 0;
 }
 
@@ -88,6 +93,7 @@ cpansite -- extend CPAN with private packages
     --cpan <url>    some CPAN mirror        CPANSITE_GLOBAL
     --site <dir>    local archive directory CPANSITE_LOCAL
     --stand-alone   no fallback to global CPAN
+    --no-undefs     do not include "undef" versions in index
 
 =head1 DESCRIPTION
 
@@ -162,6 +168,12 @@ lazy: it will process only new distributions.  When not lazy, all
 distributions on the local disk are processed and a new table is
 created.  The default of this option was reversed with release 1.00
 of C<CPAN::Site>.
+
+=item --no-undefs   or --undefs or -u
+
+Whether to include package names with "undef" version in the packages
+list. Those packages cannot be used for dependencies, so are hardly
+useful.
 
 =back
 

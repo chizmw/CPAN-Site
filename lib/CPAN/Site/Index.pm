@@ -7,7 +7,7 @@ use strict;
 
 package CPAN::Site::Index;
 use vars '$VERSION';
-$VERSION = '1.03';
+$VERSION = '1.04';
 
 use base 'Exporter';
 
@@ -34,14 +34,14 @@ my $ua;
 sub safe_copy($$);
 sub cpan_index($@);
 sub register($$$);
-sub package_inventory($$);
+sub package_inventory($$;$);
 sub package_on_usual_location($);
 sub inspect_archive;
 sub collect_package_details($$);
 sub update_global_cpan($$);
 sub load_file($$);
 sub merge_global_cpan($$$);
-sub create_details($$$$);
+sub create_details($$$$$);
 sub calculate_checksums($);
 sub read_details($);
 sub remove_expired_details($$$);
@@ -57,8 +57,9 @@ sub safe_copy($$)
 
 sub cpan_index($@)
 {   my ($mycpan, $globalcpan, %opts) = @_;
-    my $lazy            = $opts{lazy};
-    my $fallback        = $opts{fallback};
+    my $lazy     = $opts{lazy};
+    my $fallback = $opts{fallback};
+    my $undefs   = exists $opts{undefs} ? $opts{undefs} : 1;
 
     -d $mycpan
         or error __x"archive top '{dir}' is not a directory"
@@ -86,29 +87,30 @@ sub cpan_index($@)
 
     my $details     = catfile $mods, '02packages.details.txt.gz';
     my $newlist     = catfile $mods, '02packages.details.tmp.gz';
+    my $newer;
 
     my $reuse_dists = {};
     if($lazy && -f $details)
     {   $reuse_dists = read_details $details;
-        my $newer    = -M $details;
+        $newer       = -M $details;
         remove_expired_details $mycpan, $reuse_dists, $newer;
     }
 
     my ($mypkgs, $distdirs)
-      = package_inventory $mycpan, $reuse_dists;
+      = package_inventory $mycpan, $reuse_dists, $newer;
 
     merge_global_cpan $mycpan, $mypkgs, $globdetails
         if $fallback;
 
-    create_details $details, $newlist, $mypkgs, $lazy;
+    create_details $details, $newlist, $mypkgs, $lazy, $undefs;
 
     if(-f $details)
-    {   info "backup old details file to $details.bak";
+    {   trace "backup old details file to $details.bak";
         safe_copy $details, "$details.bak";
     }
 
     if(-f $newlist)
-    {   info "promoting $newlist to current";
+    {   trace "promoting $newlist to current";
         rename $newlist, $details
             or error __x"cannot rename '{from}' in '{to}'"
                  , from => $newlist, to => $details;
@@ -122,7 +124,7 @@ sub cpan_index($@)
 #
 
 # global variables for testing purposes (sorry)
-our ($topdir, $findpkgs, %finddirs, $olddists);
+our ($topdir, $findpkgs, %finddirs, $olddists, $index_age);
 
 sub register($$$)
 {  my ($package, $this_version, $dist) = @_;
@@ -140,8 +142,8 @@ sub register($$$)
    $findpkgs->{$package} = [ $this_version, $dist ];
 }
 
-sub package_inventory($$)
-{  (my $mycpan, $olddists) = @_;
+sub package_inventory($$;$)
+{  (my $mycpan, $olddists, $index_age) = @_;   #!!! see "my"
    $topdir   = catdir $mycpan, 'authors', 'id';
    mkdirhier $topdir;
 
@@ -167,13 +169,17 @@ sub inspect_archive
         or return;
 
     (my $dist = $fn) =~ s!^$topdir[\\/]!!;
+    if(defined $index_age && -M $fn > $index_age)
+    {
+        unless(exists $olddists->{$dist})
+        {   trace "not the latest: $dist";
+            return;
+        }
 
-    if(exists $olddists->{$dist})
-    {   trace "no change in $dist";
-
+        trace "latest older than index: $dist";
         foreach (@{$olddists->{$dist}})
-        {  my ($pkg, $version) = @$_;
-           register $pkg, $version, $dist;
+        {   my ($pkg, $version) = @$_;
+            register $pkg, $version, $dist;
         }
         return;
     }
@@ -199,7 +205,8 @@ sub collect_package_details($$)
 
     my @lines  = split /\r?\n/, ${$file->get_content_by_ref};
     my $in_pod = 0;
-    my ($package, $version);
+    my $package;
+    local $VERSION = undef;  # may get destroyed by eval
 
     foreach (@lines)
     {   last if m/^__(?:END|DATA)__$/;
@@ -208,28 +215,39 @@ sub collect_package_details($$)
         next if $in_pod;
 
         if( m/^\s* package \s* ((?:\w+\:\:)*\w+) \s* ;/x )
-        {   # version may be added later
-            $package = $1;
+        {   # second package in file?
+            if(defined $package)
+            {   my $nextpkg = $1;
+                register $package, $VERSION, $dist;
+                undef $VERSION;
+                $package = $nextpkg;
+            }
+            else
+            {   $package = $1;
+            }
+
             trace "pkg $package from ".$file->name;
-            register $package, undef, $dist;
         }
 
         if( m/^ (?:use\s+version\s*;\s*)?
-            (?:our)? \s* \$ ((?: \w+\:\:)*) VERSION \s* \= \s* (.*)/x )
+            (?:our)? \s* \$ ((?: \w+\:\:)*) VERSION \s* \= (.*)/x )
         {   defined $2 or next;
             my ($ns, $vers) = ($1, $2);
-            local $VERSION;  # destroyed by eval
-            $version = eval "my \$v = $vers";
-            $version = $version->numify if ref $version;
-            if(defined $version)
+
+            # some versions of CPAN.pm do contain lines like "$VERSION =~ ..."
+            # which also need to be processed.
+            eval "\$VERSION =$vers";
+            if(defined $VERSION)
             {   ($package = $ns) =~ s/\:\:$//
                     if length $ns;
-
-                trace "pkg $package version $version";
-                register $package, $version, $dist;
+                trace "pkg $package version $VERSION";
             }
         }
     }
+
+    $VERSION = $VERSION->numify if ref $VERSION;
+    register $package, $VERSION, $dist
+        if defined $package;
 }
 
 sub update_global_cpan($$)
@@ -267,7 +285,7 @@ sub load_file($$)
 sub merge_global_cpan($$$)
 {   my ($mycpan, $pkgs, $globdetails) = @_;
 
-    info "merge packages with CPAN core list in $globdetails";
+    trace "merge packages with CPAN core list in $globdetails";
     my $cpan_pkgs = read_details $globdetails;
 
     while(my ($cpandist, $cpanpkgs) = each %$cpan_pkgs)
@@ -279,8 +297,8 @@ sub merge_global_cpan($$$)
     }
 }
 
-sub create_details($$$$)
-{  my ($details, $filename, $pkgs, $lazy) = @_;
+sub create_details($$$$$)
+{  my ($details, $filename, $pkgs, $lazy, $undefs) = @_;
 
    trace "creating package details in $filename";
    my $fh = IO::Zlib->new($filename, 'wb')
@@ -308,7 +326,13 @@ __HEADER
 
    foreach my $pkg (sort keys %$pkgs)
    {  my ($version, $path) = @{$pkgs->{$pkg}};
-      $version = 'undef' if !defined $version || $version eq '';
+
+      $version = 'undef'
+          if !defined $version || $version eq '';
+
+      next
+          if $version eq 'undef' && !$undefs;
+
       $path    =~ s,\\,/,g;
       $fh->printf("%-30s\t%s\t%s\n", $pkg, $version, $path);
    }
@@ -328,7 +352,7 @@ sub calculate_checksums($)
 sub read_details($)
 {   my $fn = shift;
     -f $fn or return {};
-    info "collecting all details from $fn";
+    trace "collecting all details from $fn";
 
     my $fh    = IO::Zlib->new($fn, 'rb')
        or fault __x"cannot read from {fn}", fn => $fn;
@@ -356,7 +380,7 @@ sub read_details($)
 
 sub remove_expired_details($$$)
 {   my ($mycpan, $dists, $newer) = @_;
-    info "extracting only existing local distributions";
+    trace "extracting only existing local distributions";
 
     my $authors = catdir $mycpan, 'authors', 'id';
     foreach my $dist (keys %$dists)
@@ -408,7 +432,7 @@ sub cpan_mirror($$$@)
 
         my $to = catfile $auth, split m#/#, $dist;
         if(-f $to)
-        {   info __x"package {pkg} in distribution {dist}"
+        {   trace __x"package {pkg} present in distribution {dist}"
               , pkg => $pkg, dist => $dist;
             next;
         }
@@ -418,9 +442,8 @@ sub cpan_mirror($$$@)
         my $response = $ua->get($source, ':content_file' => $to);
         unless($response->is_success)
         {   unlink $to;
-            info __x"failed to get {uri} for {to}: {err}"
+            error __x"failed to get {uri} for {to}: {err}"
               , uri => $source, to => $to, err => $response->status_line;
-            next;
         }
 
         info __x"got {pkg} in {dist}", pkg => $pkg, dist => $dist;
