@@ -3,9 +3,15 @@
 
    *** See the CPAN6 development at http://cpan6.org
 
+version 1.06: Tue May 18 16:50:11 CEST 2010
+	Fixes:
+	- adapt to newer version.pm, which broke interface.
+	  rt.cpan.org #57575 [Richard Huxton]
+
 version 1.05: Tue Mar  2 09:33:18 CET 2010
 	Improvements:
-	- add --env_proxy for [Robert Bohne]
+	- add --env_proxy
+	  rt.cpan.org#55008 [Robert Bohne]
 
 version 1.04: Mon Oct 26 14:56:57 CET 2009
 	Improvements:

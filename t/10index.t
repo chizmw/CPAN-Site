@@ -66,9 +66,10 @@ sub _test_inspect_archive_for_distro {
     # inspect_archive is called in Index.pm using File::Find
     #   find { wanted => \&inspect_archive, no_chdir => 1 }, $topdir;
     # so we set two variables that File::Find normally sets:
-    $File::Find::name = "$CPAN::Site::Index::topdir/$distro";
-    $File::Find::dir  = $CPAN::Site::Index::topdir;
-    note("Checking $File::Find::name in $File::Find::dir");
+    {  no warnings;
+       $File::Find::name = "$CPAN::Site::Index::topdir/$distro";
+       $File::Find::dir  = $CPAN::Site::Index::topdir;
+    }
 
     $CPAN::Site::Index::findpkgs = {};
     CPAN::Site::Index::inspect_archive();

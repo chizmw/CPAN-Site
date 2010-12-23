@@ -18,7 +18,7 @@ __WARN
 WriteMakefile
  ( NAME       => 'CPAN::Site'
  , ABSTRACT   => 'adding site local modules'
- , VERSION    => '1.05'
+ , VERSION    => '1.06'
 
  , EXE_FILES  => [ 'bin/cpansite' ]
 
