@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                CPAN-Site
-version:             1.04
+version:             1.05
 abstract:            adding site local modules
 license:             perl
 author:              

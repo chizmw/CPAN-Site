@@ -20,6 +20,7 @@ my $global_cpan = $ENV{CPANSITE_GLOBAL} || CPAN_CORE;
 my $mycpan      = $ENV{CPANSITE_LOCAL}  || $ENV{CPANSITE};
 my $stand_alone = 0;
 my $undefs      = 1;
+my $env_proxy   = 0;
 
 GetOptions
     'cpan|c=s'   => \$global_cpan
@@ -29,6 +30,7 @@ GetOptions
   , 'site|s=s'   => \$mycpan
   , 'stand-alone|a!' => \$stand_alone
   , 'undefs|u!'  => \$undefs
+  , 'env-proxy!' => \$env_proxy
     or exit 1;
 
 defined $lazy or $lazy = 1;
@@ -56,9 +58,10 @@ if($action eq 'index')
         or fault __x"archive directory '{dir}'", dir => $mycpan;
 
     cpan_index $mycpan, $global_cpan
-      , lazy     => $lazy
-      , fallback => !$stand_alone
-      , undefs   => $undefs;
+      , lazy      => $lazy
+      , fallback  => !$stand_alone
+      , undefs    => $undefs
+      , env_proxy => $env_proxy;
     exit 0;
 }
 
@@ -69,7 +72,7 @@ if($action eq 'mirror')
     @ARGV
         or error __x"list of module names expected";
 
-    cpan_mirror $mycpan, $global_cpan, \@ARGV;
+    cpan_mirror $mycpan, $global_cpan, \@ARGV, env_proxy => $env_proxy;
     exit 0;
 }
 
@@ -91,6 +94,7 @@ cpansite -- extend CPAN with private packages
     --verbose  -v -vv -vvv --mode=DEBUG
     --no-lazy       redo everything
     --cpan <url>    some CPAN mirror        CPANSITE_GLOBAL
+    --env-proxy     read additional proxy settings
     --site <dir>    local archive directory CPANSITE_LOCAL
     --stand-alone   no fallback to global CPAN
     --no-undefs     do not include "undef" versions in index
@@ -152,6 +156,11 @@ Example:
 Update the list of "real" CPAN modules regularly (daily or more) from
 this url. By default, C<ftp:///ftp.cpan.org> is addressed which
 redirects to a server close to you.
+
+=item --env-proxy
+
+Let L<LWP::UserAgent> read the proxy settings from environment variables.
+See the according method in that manual page.
 
 =item --stand-alone or  -a
 

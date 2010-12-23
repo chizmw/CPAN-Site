@@ -15,30 +15,27 @@ __WARN
     sleep 5
 }
 
-my @prereq =
- ( Test::More         => 0.82
- , Test::Pod          => 1.00
- , CPAN::Checksums    => 0
- , Getopt::Long       => 0
- , LWP                => 0
- , Log::Report        => 0.25
- , Archive::Tar       => 1.00
- , IO::Zlib           => 0
- , HTTP::Date         => 0
- , version            => 0.76
- );
-
 WriteMakefile
  ( NAME       => 'CPAN::Site'
  , ABSTRACT   => 'adding site local modules'
- , VERSION    => '1.04'
+ , VERSION    => '1.05'
 
  , EXE_FILES  => [ 'bin/cpansite' ]
 
  , AUTHOR     => 'Mark Overmeer'
- , PREREQ_PM  => { @prereq }
+ , PREREQ_PM  =>
+   { Archive::Tar       => 1.00
+   , CPAN::Checksums    => 0
+   , Getopt::Long       => 0
+   , HTTP::Date         => 0
+   , IO::Zlib           => 0
+   , Log::Report        => 0.25
+   , LWP                => 0
+   , Test::More         => 0.82
+   , Test::Pod          => 1.00
+   , version            => 0.76
+   }
  , LICENSE    => 'perl'
-
  );
 
 #### the next lines are added for OODoc, which generates the

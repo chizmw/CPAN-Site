@@ -3,6 +3,10 @@
 
    *** See the CPAN6 development at http://cpan6.org
 
+version 1.05: Tue Mar  2 09:33:18 CET 2010
+	Improvements:
+	- add --env_proxy for [Robert Bohne]
+
 version 1.04: Mon Oct 26 14:56:57 CET 2009
 	Improvements:
 	- produce error, not info, if a package cannot be collected.
